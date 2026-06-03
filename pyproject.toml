@@ -1,0 +1,56 @@
+[project]
+name = "geothermal-datathon"
+version = "0.1.0"
+description = "SPE Africa Geothermal Datathon 2026 — Utrecht geothermal heating & cooling system design"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "lasio>=0.31",
+    "openpyxl>=3.1",
+    "matplotlib>=3.9",
+    "plotly>=5.22",
+    "pydantic>=2.7",
+    "pykrige>=1.7",
+    "pyarrow>=16.0",
+]
+
+[project.optional-dependencies]
+notebook = ["jupyter>=1.0", "ipykernel>=6.29", "nbformat>=5.10"]
+
+[dependency-groups]
+dev = ["ruff>=0.6", "pyright>=1.1.380", "pytest>=8.3"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/geothermal"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+# Exploratory analysis scripts (D1 notebooks) are exempt from strict library linting.
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "NPY", "RUF"]
+# Greek letters and math symbols (ρ, ΔT, η, µ…) are intentional scientific notation.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.11"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
