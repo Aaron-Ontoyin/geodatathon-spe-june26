@@ -36,7 +36,8 @@ def doublet_capacity_mw(
     return float(well_power_mw(transmissivity_dm, temperature_c, injection_temp_c=injection_temp_c))
 
 
-def _design_for(geo_capacity_mw: float, a: Assumptions) -> SystemDesign:
+def design_for(geo_capacity_mw: float, a: Assumptions) -> SystemDesign:
+    """Build a SystemDesign for a given geothermal capacity using the config's COPs/storage."""
     return SystemDesign(
         geo_capacity_mw=geo_capacity_mw,
         heat_pump_cop=a.heat_pump_cop,
@@ -70,7 +71,7 @@ def evaluate_candidate(
     """Build, simulate and cost one design; flag whether it meets demand on geothermal."""
     a = assumptions
     geo_capacity = n_doublets * doublet_capacity_mw(a.injection_temp_c)
-    design = _design_for(geo_capacity, a)
+    design = design_for(geo_capacity, a)
     perf = simulate(design, district_demand(assumptions=a))
     costs = evaluate_costs(n_doublets, design, perf, assumptions=a)
     backup_fraction = (
@@ -120,7 +121,7 @@ def monte_carlo_lcoe_samples(
     for i in range(n_samples):
         transmissivity = float(rng.lognormal(mu, sigma))
         geo = n_doublets * doublet_capacity_mw(a.injection_temp_c, transmissivity_dm=transmissivity)
-        design = _design_for(geo, a)
+        design = design_for(geo, a)
         perf = simulate(design, demand)
         lcoes[i] = evaluate_costs(n_doublets, design, perf, assumptions=a).lcoe_eur_per_gj
     return lcoes

@@ -26,6 +26,7 @@ from geothermal.economics.search import (
     SearchResult,
     search_designs,
 )
+from geothermal.economics.sensitivity import lcoe_sensitivity, tornado
 
 __all__ = [
     "DISCOUNT_RATE",
@@ -39,9 +40,11 @@ __all__ = [
     "evaluate_candidate",
     "evaluate_costs",
     "lcoe_monte_carlo",
+    "lcoe_sensitivity",
     "levelized_cost_eur_per_gj",
     "levelized_cost_eur_per_mwh",
     "monte_carlo_lcoe_samples",
     "optimize",
     "search_designs",
+    "tornado",
 ]
