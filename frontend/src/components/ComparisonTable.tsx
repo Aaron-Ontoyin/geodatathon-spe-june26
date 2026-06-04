@@ -6,7 +6,7 @@ interface ComparisonTableProps {
   bestDoublets: number;
 }
 
-/** Design comparison table — one row per candidate, highlighting the best design. */
+/** Design comparison table, one row per candidate, highlighting the best design. */
 export function ComparisonTable({ candidates, bestDoublets }: ComparisonTableProps) {
   return (
     <Panel label="DESIGN COMPARISON">
@@ -38,7 +38,7 @@ export function ComparisonTable({ candidates, bestDoublets }: ComparisonTablePro
                 {c.meets_demand ? (
                   <span className="tag cool">OK</span>
                 ) : (
-                  <span className="tag">—</span>
+                  <span className="tag">–</span>
                 )}
               </td>
             </tr>

@@ -87,7 +87,7 @@ a {
   background: rgba(43, 110, 122, 0.2);
 }
 
-/* Scrollbars — invisible at rest; fade in only while the pointer is over the
+/* Scrollbars, invisible at rest; fade in only while the pointer is over the
    scroll area (and firm up on the thumb itself). */
 * {
   scrollbar-width: thin;

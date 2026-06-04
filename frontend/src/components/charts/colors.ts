@@ -3,9 +3,9 @@
 // so low resource recedes into the vellum and hotspots read as deep "elevation".
 
 export const ACCENT = {
-  heat: "#b06640", // burnt sienna — heating series / viable wells
+  heat: "#b06640", // burnt sienna, heating series / viable wells
   heatHi: "#8c4626",
-  cool: "#2b6e7a", // deep teal — primary / cooling series
+  cool: "#2b6e7a", // deep teal, primary / cooling series
   coolHi: "#1c545f",
   grid: "rgba(38,52,52,0.10)",
   axis: "rgba(38,52,52,0.32)",
@@ -15,7 +15,7 @@ export const ACCENT = {
 
 // Cartographic elevation control points (stone -> teal -> indigo), sampled by lerp.
 const RAMP: [number, number, number][] = [
-  [232, 236, 226], // pale stone (low — blends into the canvas)
+  [232, 236, 226], // pale stone (low, blends into the canvas)
   [185, 207, 198], // sage stone
   [111, 163, 158], // shallow teal
   [43, 110, 122], // deep teal

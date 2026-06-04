@@ -17,8 +17,8 @@ const SECTIONS: DocSection[] = [
           <strong>GEOTHERM</strong> sizes and prices a geothermal <strong>district heating + cooling</strong>{" "}
           system for the Utrecht region (Netherlands), targeting the deep{" "}
           <strong>Rotliegend (Slochteren) sandstone</strong>. It chooses the well programme and the
-          integrated surface system that meet the demand — <strong>≥10 MWth heating</strong> and{" "}
-          <strong>≥5 MWth cooling</strong> — at the lowest, most credible{" "}
+          integrated surface system that meet the demand, <strong>≥10 MWth heating</strong> and{" "}
+          <strong>≥5 MWth cooling</strong>, at the lowest, most credible{" "}
           <strong>levelised cost of energy (LCoE)</strong>.
         </p>
         <p>
@@ -41,12 +41,12 @@ const SECTIONS: DocSection[] = [
         </p>
         <ul>
           <li>
-            <strong>LCoE 20.9 €/GJ</strong> — P10 16.8 / P50 20.9 / P90 36.9 (transmissivity uncertainty).
+            <strong>LCoE 20.9 €/GJ</strong>, P10 16.8 / P50 20.9 / P90 36.9 (transmissivity uncertainty).
           </li>
           <li>Firm heating 7.9 MWth; HT-ATES covers the winter peak so backup is near-zero.</li>
           <li>
             Geothermal utilisation rises to <strong>99%</strong> by doing cooling as well as heating
-            (vs 59% heating-only) — running the wells hard year-round is why it is cheap.
+            (vs 59% heating-only). Running the wells hard year-round is why it is cheap.
           </li>
           <li>CAPEX ≈ 17 M€.</li>
         </ul>
@@ -68,7 +68,7 @@ const SECTIONS: DocSection[] = [
           <li>
             <strong>Data foundation.</strong> Reconstructs true vertical depth from the directional
             surveys (minimum curvature), repairs unit artefacts, and imputes missing porosity from the
-            density logs — validated against the independent ThermoGIS regional model.
+            density logs, validated against the independent ThermoGIS regional model.
           </li>
           <li>
             <strong>Resource (Challenge 1).</strong> Doublet power per well as a P10/P50/P90 band (only
@@ -78,7 +78,7 @@ const SECTIONS: DocSection[] = [
           <li>
             <strong>System design (Challenge 2A).</strong> Geothermal doublet → heat pump → HT-ATES →
             absorption cooling, on a monthly energy balance. Cooling monetises otherwise-idle summer
-            capacity — that is the cost win.
+            capacity: that is the cost win.
           </li>
           <li>
             <strong>Techno-economics (Challenge 2B).</strong> A Python port of the TNO/ECN LCoE model
@@ -105,7 +105,7 @@ const SECTIONS: DocSection[] = [
             <strong>Evaluate vs Optimise.</strong> <em>Evaluate</em> computes the design and LCoE for
             your exact inputs. <em>Optimise</em> searches the doublet/HT-ATES count plus the design
             levers you mark as ranges (return temperature, free cooling) for the least-cost design that
-            satisfies your constraints. Economic and demand inputs stay fixed — their uncertainty is the
+            satisfies your constraints. Economic and demand inputs stay fixed: their uncertainty is the
             job of the Monte-Carlo and tornado, not the optimiser.
           </li>
           <li>
@@ -142,7 +142,7 @@ const SECTIONS: DocSection[] = [
         <p>
           The same deterministic engine behind this app also runs as a{" "}
           <strong>command-line tool</strong> (<code>geo-datathon</code>), driven by the very same{" "}
-          <code>inputs.toml</code> the app imports and exports — so the full analysis reproduces with{" "}
+          <code>inputs.toml</code> the app imports and exports, so the full analysis reproduces with{" "}
           <strong>no web app and no API key</strong>:
         </p>
         <pre className="docs-code">{`# write a starting inputs.toml
@@ -163,7 +163,7 @@ uv run geo-datathon workflow --input inputs.toml`}</pre>
       <>
         <ul>
           <li>
-            Every input is a <strong>documented parameter</strong> — no hidden constants. Defaults come
+            Every input is a <strong>documented parameter</strong>, no hidden constants. Defaults come
             from the provided LCoE model plus public ranges.
           </li>
           <li>
@@ -179,7 +179,7 @@ uv run geo-datathon workflow --input inputs.toml`}</pre>
             correlation would narrow the band somewhat.
           </li>
           <li>
-            The 1-doublet optimum relies on HT-ATES delivering the winter peak shortfall — a detailed
+            The 1-doublet optimum relies on HT-ATES delivering the winter peak shortfall, a detailed
             storage design should confirm it.
           </li>
         </ul>
@@ -226,9 +226,7 @@ export function HelpDock() {
             onClick={(e) => e.stopPropagation()}
           >
             <header className="docs-head">
-              <span className="brand">
-                GEOTHERM<span className="dot">.</span>
-              </span>
+              <span className="brand">GEOTHERM</span>
               <span className="docs-kicker">Documentation</span>
               <button
                 type="button"

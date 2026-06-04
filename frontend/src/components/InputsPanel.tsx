@@ -6,7 +6,7 @@ import { ScrubField } from "./ScrubField";
 import { Tooltip } from "./Tooltip";
 
 const OBJECTIVES: { id: Objective; label: string; hint: string }[] = [
-  { id: "min_lcoe", label: "MIN LCoE", hint: "Lowest levelised cost (€/GJ) — the deciding metric." },
+  { id: "min_lcoe", label: "MIN LCoE", hint: "Lowest levelised cost (€/GJ), the deciding metric." },
   { id: "min_capex", label: "MIN CAPEX", hint: "Lowest upfront capital (M€), ties broken by LCoE." },
   {
     id: "max_capacity",
@@ -195,7 +195,7 @@ export function InputsPanel({
                 <>
                   Only <strong>design levers</strong> can be ranged (↔):{" "}
                   <strong>injection temperature</strong> and <strong>free-cooling capacity</strong>.
-                  Prices, costs &amp; demand stay fixed — their uncertainty is shown by the
+                  Prices, costs &amp; demand stay fixed. Their uncertainty is shown by the
                   Monte-Carlo &amp; tornado.
                 </>
               }

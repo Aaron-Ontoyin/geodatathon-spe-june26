@@ -75,7 +75,7 @@ export const FIELD_GROUPS: FieldGroup[] = [
 /** Groups expanded by default; the rest start collapsed. */
 export const DEFAULT_OPEN: readonly string[] = ["Demand & Loads", "Energy Prices & O&M", "Economics"];
 
-/** The only parameters that may be optimised over (set as ranges) — genuine design
+/** The only parameters that may be optimised over (set as ranges), genuine design
     levers the operator controls. Everything else is a fixed input; its uncertainty
     belongs to the Monte-Carlo / tornado, not the optimiser. The doublet/HT-ATES
     count is always searched automatically and is not listed here. */

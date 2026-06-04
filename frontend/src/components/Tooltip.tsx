@@ -11,7 +11,7 @@ interface TooltipProps {
   children: ReactElement;
 }
 
-/** Handlers the trigger may already carry — chained, not clobbered. */
+/** Handlers the trigger may already carry, chained, not clobbered. */
 type ExistingHandlers = Partial<{
   onMouseEnter: (e: MouseEvent<HTMLElement>) => void;
   onMouseLeave: (e: MouseEvent<HTMLElement>) => void;

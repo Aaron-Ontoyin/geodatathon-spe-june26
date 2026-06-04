@@ -39,26 +39,31 @@ const asNumberPair = (v: unknown): [number, number] | undefined =>
 
 export function App() {
   const [config, setConfig] = useState<ConfigResponse | null>(null);
-  const [values, setValues] = useState<Assumptions>({});
+  const [values, setValues] = usePersistentState<Assumptions>("geotherm.values", {});
   const [mode, setMode] = usePersistentState<"single" | "optimize">("geotherm.mode", "single");
-  const [search, setSearch] = useState<SearchState>(INITIAL_SEARCH);
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [reportMd, setReportMd] = useState<string | null>(null);
+  const [search, setSearch] = usePersistentState<SearchState>("geotherm.search", INITIAL_SEARCH);
+  const [dashboard, setDashboard] = usePersistentState<Dashboard | null>("geotherm.dashboard", null);
+  const [reportMd, setReportMd] = usePersistentState<string | null>("geotherm.report", null);
   const [reportLoading, setReportLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ProgressEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showKeys, setShowKeys] = useState(false);
+  const [resultObjective, setResultObjective] = usePersistentState<Objective | null>(
+    "geotherm.result-objective",
+    null,
+  );
   const rail = useResizable({ storageKey: "geotherm.rail-width", initial: 420, min: 300, max: 640 });
 
   useEffect(() => {
     getConfig()
       .then((c) => {
         setConfig(c);
-        setValues(c.defaults);
+        // keep restored values from a previous session; only seed defaults if empty
+        setValues((prev) => (Object.keys(prev).length > 0 ? prev : c.defaults));
       })
       .catch((e) => setError(String(e)));
-  }, []);
+  }, [setValues]);
 
   const buildSpec = useCallback((): InputSpec => {
     const spec: InputSpec = { assumptions: values };
@@ -83,7 +88,7 @@ export function App() {
       .then((r) => setReportMd(r.markdown))
       .catch(() => setReportMd(null))
       .finally(() => setReportLoading(false));
-  }, []);
+  }, [setReportMd]);
 
   const run = useCallback(() => {
     if (busy || !config) return;
@@ -91,10 +96,12 @@ export function App() {
     setBusy(true);
     setProgress(null);
     const spec = buildSpec();
+    const ranObjective: Objective | null = mode === "optimize" ? search.objective : null;
     if (mode === "single") {
       analyze(spec)
         .then((d) => {
           setDashboard(d);
+          setResultObjective(ranObjective);
           loadReport(spec);
         })
         .catch((e) => setError(String(e)))
@@ -108,6 +115,7 @@ export function App() {
             analyze(winner)
               .then((d) => {
                 setDashboard(d);
+                setResultObjective(ranObjective);
                 loadReport(winner);
               })
               .catch((e) => setError(String(e)))
@@ -123,12 +131,20 @@ export function App() {
         },
       });
     }
-  }, [busy, config, mode, buildSpec, loadReport]);
+  }, [busy, config, mode, search, buildSpec, loadReport, setDashboard, setResultObjective]);
 
   const reset = useCallback(() => {
     if (config) setValues(config.defaults);
     setSearch(INITIAL_SEARCH);
-  }, [config]);
+  }, [config, setValues, setSearch]);
+
+  const clearResults = useCallback(() => {
+    setDashboard(null);
+    setReportMd(null);
+    setResultObjective(null);
+    setError(null);
+    setProgress(null);
+  }, [setDashboard, setReportMd, setResultObjective]);
 
   const exportToml = useCallback(() => {
     let s = "[assumptions]\n";
@@ -196,7 +212,7 @@ export function App() {
         })
         .catch((e: unknown) => setError(`Could not read TOML: ${String(e)}`));
     },
-    [config],
+    [config, setValues, setSearch, setMode],
   );
 
   const downloadReport = useCallback(() => {
@@ -225,7 +241,7 @@ export function App() {
           },
         },
       ],
-      [run, reset, downloadReport],
+      [run, reset, downloadReport, setMode],
     ),
   );
 
@@ -237,11 +253,19 @@ export function App() {
         : "Computing…"
     : dashboard
       ? "Ready"
-      : "Idle — press Run";
+      : "Idle, press Run";
 
   return (
     <div className="app">
-      <StatusBar mode={mode} onMode={setMode} onRun={run} busy={busy} status={status} />
+      <StatusBar
+        mode={mode}
+        onMode={setMode}
+        onRun={run}
+        busy={busy}
+        status={status}
+        onClear={clearResults}
+        hasResult={dashboard !== null}
+      />
       <div className="workspace" style={{ "--rail-w": `${rail.width}px` } as React.CSSProperties}>
         <aside className="rail">
           <InputsPanel
@@ -285,7 +309,7 @@ export function App() {
           {busy && progress && (
             <div className="panel" style={{ padding: "var(--s4)", marginBottom: "var(--s4)" }}>
               <div className="label" style={{ marginBottom: 8 }}>
-                {progress.message} — {progress.done}/{progress.total}
+                {progress.message}, {progress.done}/{progress.total}
               </div>
               <div className="scanbar">
                 <div className="fill" style={{ "--p": `${progress.fraction * 100}%` } as React.CSSProperties} />
@@ -295,13 +319,13 @@ export function App() {
           )}
 
           {!dashboard && !busy && (
-            <div className="panel rise" style={{ padding: "var(--s7)", textAlign: "center" }}>
+            <div className="empty-state rise">
               <div className="brand" style={{ fontSize: 18, marginBottom: 8 }}>
-                GEOTHERM<span className="dot" style={{ color: "var(--cool)" }}>.</span>
+                GEOTHERM
               </div>
               <div style={{ color: "var(--text-dim)", maxWidth: 460, margin: "0 auto" }}>
                 Set the parameters and press <span className="kbd">⌘↵</span> Run to evaluate the
-                Utrecht geothermal heating + cooling system — resource, design, and least-cost LCoE.
+                Utrecht geothermal heating + cooling system: resource, design, and least-cost LCoE.
               </div>
             </div>
           )}
@@ -309,7 +333,11 @@ export function App() {
           {dashboard && (
             <div className="grid">
               <div className="col-12 rise" style={{ animationDelay: "0ms" }}>
-                <HeadlineStrip headline={dashboard.headline} doublets={dashboard.best.n_doublets} />
+                <HeadlineStrip
+                  headline={dashboard.headline}
+                  doublets={dashboard.best.n_doublets}
+                  objective={resultObjective}
+                />
               </div>
               <div className="col-7 rise" style={{ animationDelay: "60ms" }}>
                 <ResourceMap map={dashboard.resource_map} />

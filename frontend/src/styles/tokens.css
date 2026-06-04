@@ -1,13 +1,13 @@
-/* GEOTHERM — design tokens.
+/* GEOTHERM, design tokens.
    "Topo Vellum": cartographic light scheme. Cool stone-vellum canvas with a
    contour-line texture, dark slate ink, deep teal as the brand/primary (and the
-   cooling accent), burnt sienna for heating — the map reading of water vs.
+   cooling accent), burnt sienna for heating, the map reading of water vs.
    elevation. Each accent carries a deep "-hi" variant for readable TEXT on light. */
 :root {
   /* canvas + surfaces (cool stone vellum) */
   --bg-0: #e1e5da;   /* sunken/inset: inputs, code, scanbar track */
-  --bg-1: #eaeee4;   /* app canvas — stone vellum */
-  --panel: #f4f6ee;  /* cards — light stone, floats on the contoured canvas */
+  --bg-1: #eaeee4;   /* app canvas, stone vellum */
+  --panel: #f4f6ee;  /* cards, light stone, floats on the contoured canvas */
   --panel-2: #e5e9df; /* rail / recessed sidebar */
   --panel-hi: #fafbf5; /* raised: hover */
 
@@ -17,15 +17,15 @@
 
   /* text (dark slate-teal ink) */
   --text: #1e2a2b;       /* primary */
-  --text-dim: #5a6765;   /* secondary — readable slate */
-  --text-faint: #8a9592; /* faint — labels, decorative */
+  --text-dim: #5a6765;   /* secondary, readable slate */
+  --text-faint: #8a9592; /* faint, labels, decorative */
 
-  /* heat / heating — cartographic burnt sienna (map "elevation") */
+  /* heat / heating, cartographic burnt sienna (map "elevation") */
   --heat: #b06640;       /* mid sienna: fills, borders, heating series */
   --heat-hi: #8c4626;    /* deep sienna: accent TEXT (readable on light) */
   --heat-dim: rgba(176, 102, 64, 0.13);
 
-  /* cool / cooling — deep teal; also the BRAND / PRIMARY accent (map "water") */
+  /* cool / cooling, deep teal; also the BRAND / PRIMARY accent (map "water") */
   --cool: #2b6e7a;       /* deep teal: primary fills, brand, cooling series */
   --cool-hi: #1c545f;    /* deeper teal: accent TEXT + links (readable on light) */
   --cool-dim: rgba(43, 110, 122, 0.13);

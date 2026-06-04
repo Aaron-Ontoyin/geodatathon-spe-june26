@@ -17,7 +17,7 @@ interface Resizable {
 
 const clamp = (n: number, lo: number, hi: number): number => Math.min(Math.max(n, lo), hi);
 
-/** A persisted, pointer-draggable width — e.g. for a resizable sidebar.
+/** A persisted, pointer-draggable width, e.g. for a resizable sidebar.
     Window listeners attach only while dragging; double-click `reset` restores `initial`. */
 export function useResizable({ storageKey, initial, min, max }: ResizableOptions): Resizable {
   const [width, setWidth] = useState<number>(() => {

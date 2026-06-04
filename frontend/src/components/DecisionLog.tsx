@@ -11,7 +11,7 @@ interface DecisionLogProps {
 
 /** Format a metric value compactly: integers stay whole, fractions get 2 dp. */
 function fmtMetric(v: number): string {
-  if (!Number.isFinite(v)) return "—";
+  if (!Number.isFinite(v)) return "–";
   if (Number.isInteger(v)) return String(v);
   const abs = Math.abs(v);
   if (abs >= 100) return v.toFixed(0);

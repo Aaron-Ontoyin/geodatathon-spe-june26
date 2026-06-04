@@ -38,7 +38,7 @@ export function ChatDock({ context }: ChatDockProps) {
       if (apiKey) localStorage.setItem(KEY_STORAGE, apiKey);
       else localStorage.removeItem(KEY_STORAGE);
     } catch {
-      /* localStorage unavailable — non-fatal */
+      /* localStorage unavailable, non-fatal */
     }
   }, [apiKey]);
 
