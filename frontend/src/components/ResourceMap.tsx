@@ -115,24 +115,33 @@ export function ResourceMap({ map }: ResourceMapProps) {
       ctx.font = "10px var(--font-mono), ui-monospace, monospace";
       ctx.textBaseline = "middle";
 
+      // Markers read across the full cream->rust ramp: a soft halo lifts them
+      // off dark hotspots, a dark-ink edge defines them on the light field.
+      const INK = "#2a2620";
+      const HALO = "rgba(253, 252, 248, 0.92)";
+
       // Wells.
       for (const well of map.wells) {
         const wx = toX(well.x);
         const wy = toY(well.y);
         const viable = well.p50 > 0;
+        ctx.beginPath();
+        ctx.arc(wx, wy, 6, 0, Math.PI * 2);
+        ctx.fillStyle = HALO;
+        ctx.fill();
         ctx.lineWidth = 1.25;
         if (viable) {
           ctx.beginPath();
           ctx.arc(wx, wy, 4, 0, Math.PI * 2);
           ctx.fillStyle = ACCENT.heat;
           ctx.fill();
-          ctx.strokeStyle = "#ffffff";
+          ctx.strokeStyle = INK;
           ctx.stroke();
         } else {
           // Tight well: hollow ring with an X through it.
           ctx.beginPath();
           ctx.arc(wx, wy, 4, 0, Math.PI * 2);
-          ctx.strokeStyle = "#ffffff";
+          ctx.strokeStyle = INK;
           ctx.stroke();
           ctx.beginPath();
           ctx.moveTo(wx - 3, wy - 3);
@@ -142,33 +151,43 @@ export function ResourceMap({ map }: ResourceMapProps) {
           ctx.strokeStyle = ACCENT.bad;
           ctx.stroke();
         }
-        ctx.fillStyle = "rgba(230,238,248,0.85)";
+        ctx.fillStyle = INK;
         ctx.textAlign = "left";
+        ctx.shadowColor = HALO;
+        ctx.shadowBlur = 3;
         ctx.fillText(well.id, wx + 7, wy);
+        ctx.shadowBlur = 0;
       }
 
-      // Demand point: red diamond.
+      // Demand point: red diamond with a halo.
       {
         const dx = toX(map.demand.x);
         const dy = toY(map.demand.y);
-        const s = 6;
-        ctx.beginPath();
-        ctx.moveTo(dx, dy - s);
-        ctx.lineTo(dx + s, dy);
-        ctx.lineTo(dx, dy + s);
-        ctx.lineTo(dx - s, dy);
-        ctx.closePath();
+        const diamond = (s: number) => {
+          ctx.beginPath();
+          ctx.moveTo(dx, dy - s);
+          ctx.lineTo(dx + s, dy);
+          ctx.lineTo(dx, dy + s);
+          ctx.lineTo(dx - s, dy);
+          ctx.closePath();
+        };
+        diamond(8);
+        ctx.fillStyle = HALO;
+        ctx.fill();
+        diamond(6);
         ctx.fillStyle = ACCENT.bad;
         ctx.fill();
-        ctx.strokeStyle = "#ffffff";
+        ctx.strokeStyle = INK;
         ctx.lineWidth = 1;
         ctx.stroke();
       }
 
-      // Recommended point: cyan plus with label.
+      // Recommended point: teal plus with label.
       {
         const rx = toX(map.recommended.x);
         const ry = toY(map.recommended.y);
+        ctx.shadowColor = HALO;
+        ctx.shadowBlur = 4;
         ctx.strokeStyle = ACCENT.coolHi;
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -182,6 +201,7 @@ export function ResourceMap({ map }: ResourceMapProps) {
         ctx.fillStyle = ACCENT.coolHi;
         ctx.textAlign = "left";
         ctx.fillText(label, rx + 9, ry - 8);
+        ctx.shadowBlur = 0;
       }
 
       // Vertical colorbar on the right.

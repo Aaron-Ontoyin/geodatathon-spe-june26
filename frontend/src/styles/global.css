@@ -22,7 +22,7 @@ body {
   overflow: hidden;
 }
 
-/* Subsurface atmosphere: vignette + faint grain overlay */
+/* Warm paper atmosphere: faint clay/teal wash + a whisper of grain */
 body::before {
   content: "";
   position: fixed;
@@ -30,9 +30,8 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba(255, 138, 61, 0.06), transparent 55%),
-    radial-gradient(100% 100% at 50% 120%, rgba(69, 208, 192, 0.05), transparent 60%),
-    radial-gradient(140% 120% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+    radial-gradient(120% 80% at 50% -10%, rgba(194, 96, 63, 0.06), transparent 55%),
+    radial-gradient(100% 100% at 50% 120%, rgba(47, 143, 137, 0.045), transparent 60%);
 }
 body::after {
   content: "";
@@ -40,8 +39,8 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
+  opacity: 0.04;
+  mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -74,7 +73,7 @@ a {
 }
 
 ::selection {
-  background: rgba(255, 138, 61, 0.28);
+  background: rgba(194, 96, 63, 0.22);
 }
 
 /* Custom scrollbars */
@@ -83,13 +82,13 @@ a {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(150, 175, 210, 0.16);
+  background: rgba(58, 50, 38, 0.18);
   border-radius: 8px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(150, 175, 210, 0.28);
+  background: rgba(58, 50, 38, 0.3);
   background-clip: content-box;
 }
 

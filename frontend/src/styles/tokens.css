@@ -1,34 +1,38 @@
-/* Subsurface Instrument — design tokens.
-   Deep charcoal-blue canvas, molten-amber heat accent, cool-teal cooling accent. */
+/* GEOTHERM — design tokens.
+   Anthropic-inspired warm light scheme: ivory paper canvas, near-white cards,
+   warm-ink text, clay/terracotta heat accent, muted teal cooling accent.
+   Each accent carries a deep "-hi" variant tuned for readable TEXT on light. */
 :root {
-  /* canvas + surfaces (top = shallow, deep = subsurface) */
-  --bg-0: #07090e;
-  --bg-1: #0b0f17;
-  --panel: #111824;
-  --panel-2: #0d131d;
-  --panel-hi: #16202e;
+  /* canvas + surfaces (warm paper, light) */
+  --bg-0: #e9e5d8;   /* sunken/inset: inputs, code, scanbar track */
+  --bg-1: #f4f1e8;   /* app canvas — warm ivory */
+  --panel: #fdfcf8;  /* cards — near-white warm, lifts off the canvas */
+  --panel-2: #efebe0; /* rail / recessed sidebar */
+  --panel-hi: #ffffff; /* raised: hover, statusbar top */
 
-  /* hairlines + framing */
-  --line: rgba(150, 175, 210, 0.10);
-  --line-strong: rgba(150, 175, 210, 0.20);
+  /* hairlines + framing (warm ink, low alpha) */
+  --line: rgba(58, 50, 38, 0.12);
+  --line-strong: rgba(58, 50, 38, 0.22);
 
-  /* text */
-  --text: #e9eff7;
-  --text-dim: #8a99ad;
-  --text-faint: #586679;
+  /* text (warm ink) */
+  --text: #2a2620;       /* primary — warm near-black */
+  --text-dim: #645d4e;   /* secondary — readable warm grey */
+  --text-faint: #8a8170; /* faint — labels, decorative */
 
-  /* energy accents */
-  --heat: #ff8a3d;
-  --heat-hi: #ffb066;
-  --heat-dim: rgba(255, 138, 61, 0.14);
-  --cool: #45d0c0;
-  --cool-hi: #74e6d8;
-  --cool-dim: rgba(69, 208, 192, 0.14);
+  /* heat / heating — Anthropic clay-terracotta (also the brand accent) */
+  --heat: #c2603f;       /* mid clay: fills, borders, LED, range thumb */
+  --heat-hi: #9e4527;    /* deep clay: accent TEXT + links (readable on light) */
+  --heat-dim: rgba(194, 96, 63, 0.13); /* pale clay wash: active bg, hover */
+
+  /* cool / cooling — muted teal that harmonises with the warm palette */
+  --cool: #2f8f89;       /* mid teal: fills, borders, icons */
+  --cool-hi: #1f6f6a;    /* deep teal: accent TEXT (readable on light) */
+  --cool-dim: rgba(47, 143, 137, 0.13);
 
   /* status */
-  --good: #5fd38a;
-  --warn: #ffd166;
-  --bad: #ff5d5d;
+  --good: #3e8e5a;
+  --warn: #b07a1e;
+  --bad: #be4636;
 
   /* type */
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
@@ -46,9 +50,10 @@
   --radius: 9px;
   --radius-sm: 5px;
 
-  --shadow: 0 16px 48px -18px rgba(0, 0, 0, 0.7);
-  --glow-heat: 0 0 0 1px rgba(255, 138, 61, 0.5), 0 0 28px -8px rgba(255, 138, 61, 0.55);
-  --glow-cool: 0 0 0 1px rgba(69, 208, 192, 0.45), 0 0 24px -8px rgba(69, 208, 192, 0.5);
+  /* soft, warm elevation for a paper-light surface */
+  --shadow: 0 1px 2px rgba(60, 48, 30, 0.05), 0 10px 30px -16px rgba(60, 48, 30, 0.22);
+  --glow-heat: 0 0 0 1px var(--heat), 0 6px 20px -8px rgba(194, 96, 63, 0.45);
+  --glow-cool: 0 0 0 1px var(--cool), 0 6px 20px -8px rgba(47, 143, 137, 0.4);
 
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }

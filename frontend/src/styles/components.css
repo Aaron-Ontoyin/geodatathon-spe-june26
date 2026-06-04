@@ -119,9 +119,9 @@
 .btn:hover { border-color: var(--text-dim); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-primary {
-  background: linear-gradient(180deg, var(--heat-hi), var(--heat));
+  background: linear-gradient(180deg, var(--heat), var(--heat-hi));
   border-color: transparent;
-  color: #1a0f06;
+  color: #fff7f2;
   font-weight: 600;
 }
 .btn-primary:hover { box-shadow: var(--glow-heat); }
@@ -204,8 +204,8 @@
   border: 1px solid var(--line-strong);
   color: var(--text-dim);
 }
-.tag.heat { color: var(--heat-hi); border-color: rgba(255,138,61,0.4); }
-.tag.cool { color: var(--cool-hi); border-color: rgba(69,208,192,0.4); }
+.tag.heat { color: var(--heat-hi); border-color: color-mix(in srgb, var(--heat) 45%, transparent); }
+.tag.cool { color: var(--cool-hi); border-color: color-mix(in srgb, var(--cool) 45%, transparent); }
 
 /* ---- Scan progress ---- */
 .scanbar {
