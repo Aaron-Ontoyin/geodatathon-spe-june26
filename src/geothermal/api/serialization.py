@@ -60,6 +60,7 @@ def candidate_dict(candidate: DesignCandidate) -> dict[str, object]:
         "backup_fraction": candidate.backup_fraction,
         "meets_demand": candidate.meets_demand,
         "capex_breakdown": candidate.costs.capex_breakdown,
+        "assumptions": candidate.assumptions.model_dump(),
     }
 
 

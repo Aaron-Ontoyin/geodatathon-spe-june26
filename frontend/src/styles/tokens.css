@@ -1,0 +1,54 @@
+/* Subsurface Instrument — design tokens.
+   Deep charcoal-blue canvas, molten-amber heat accent, cool-teal cooling accent. */
+:root {
+  /* canvas + surfaces (top = shallow, deep = subsurface) */
+  --bg-0: #07090e;
+  --bg-1: #0b0f17;
+  --panel: #111824;
+  --panel-2: #0d131d;
+  --panel-hi: #16202e;
+
+  /* hairlines + framing */
+  --line: rgba(150, 175, 210, 0.10);
+  --line-strong: rgba(150, 175, 210, 0.20);
+
+  /* text */
+  --text: #e9eff7;
+  --text-dim: #8a99ad;
+  --text-faint: #586679;
+
+  /* energy accents */
+  --heat: #ff8a3d;
+  --heat-hi: #ffb066;
+  --heat-dim: rgba(255, 138, 61, 0.14);
+  --cool: #45d0c0;
+  --cool-hi: #74e6d8;
+  --cool-dim: rgba(69, 208, 192, 0.14);
+
+  /* status */
+  --good: #5fd38a;
+  --warn: #ffd166;
+  --bad: #ff5d5d;
+
+  /* type */
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+
+  /* spacing */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+
+  --radius: 9px;
+  --radius-sm: 5px;
+
+  --shadow: 0 16px 48px -18px rgba(0, 0, 0, 0.7);
+  --glow-heat: 0 0 0 1px rgba(255, 138, 61, 0.5), 0 0 28px -8px rgba(255, 138, 61, 0.55);
+  --glow-cool: 0 0 0 1px rgba(69, 208, 192, 0.45), 0 0 24px -8px rgba(69, 208, 192, 0.5);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
