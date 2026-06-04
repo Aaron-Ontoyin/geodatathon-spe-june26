@@ -16,8 +16,11 @@ from geothermal.datasets import clean_reservoir_dataset
 from geothermal.design import district_demand, simulate
 from geothermal.economics.optimization import design_for, evaluate_candidate, lcoe_monte_carlo
 from geothermal.petrophysics import imputed_vs_thermogis
+from geothermal.progress import Progress, ProgressCallback, report
 from geothermal.report import build_report
 from geothermal.resource import locate_demand_center, recommend_new_well, well_power_percentiles
+
+_TOTAL_STAGES = 6
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,12 +44,22 @@ class WorkflowResult:
 
 
 def run_workflow(
-    *, assumptions: Assumptions = DEFAULT_ASSUMPTIONS, mc_samples: int = 2000
+    *,
+    assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
+    mc_samples: int = 2000,
+    on_progress: ProgressCallback | None = None,
 ) -> WorkflowResult:
     """Run the full pipeline, recording the decision made at each stage."""
     a = assumptions
     steps: list[WorkflowStep] = []
 
+    def _emit(message: str, *, done: int | None = None) -> None:
+        report(
+            on_progress,
+            Progress("workflow", len(steps) if done is None else done, _TOTAL_STAGES, message),
+        )
+
+    _emit("Cleaning and validating well data")
     # 1 — Data foundation
     check = imputed_vs_thermogis(clean_reservoir_dataset())
     imputed = check[check["source"] == "imputed"]
@@ -63,6 +76,7 @@ def run_workflow(
         )
     )
 
+    _emit("Assessing the geothermal resource")
     # 2 — Resource assessment
     pct = well_power_percentiles()
     viable = [
@@ -80,6 +94,7 @@ def run_workflow(
         )
     )
 
+    _emit("Siting a new well")
     # 3 — Well siting
     usp_x, usp_y = locate_demand_center()
     rec = recommend_new_well(assumptions=a)
@@ -98,6 +113,7 @@ def run_workflow(
         )
     )
 
+    _emit("Optimising the system design")
     # 4 — System design & optimisation
     ranked = [evaluate_candidate(n, assumptions=a) for n in (1, 2, 3)]
     best = sorted((c for c in ranked if c.meets_demand), key=lambda c: c.lcoe_eur_per_gj)[0]
@@ -118,6 +134,7 @@ def run_workflow(
         )
     )
 
+    _emit("Running the risk Monte-Carlo")
     # 5 — Risk assessment
     band = lcoe_monte_carlo(best.n_doublets, assumptions=a, n_samples=mc_samples)
     steps.append(
@@ -131,7 +148,9 @@ def run_workflow(
         )
     )
 
+    _emit("Assembling the report")
     report_markdown = build_report(assumptions=a, mc_samples=mc_samples)
+    _emit("Complete", done=_TOTAL_STAGES)
     return WorkflowResult(
         steps=tuple(steps),
         report_markdown=report_markdown,

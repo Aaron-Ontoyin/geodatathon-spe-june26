@@ -7,13 +7,14 @@ deterministic and key-free so judges can reproduce it; an optional LLM layer
 API key is present, and falls back to the deterministic narration otherwise.
 """
 
-from geothermal.agent.llm import build_model, chat
+from geothermal.agent.llm import astream_chat, build_model, chat
 from geothermal.agent.narrate import narrate, narrate_deterministic
 from geothermal.agent.workflow import WorkflowResult, WorkflowStep, run_workflow
 
 __all__ = [
     "WorkflowResult",
     "WorkflowStep",
+    "astream_chat",
     "build_model",
     "chat",
     "narrate",

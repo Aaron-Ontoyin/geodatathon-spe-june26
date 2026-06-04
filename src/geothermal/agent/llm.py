@@ -11,7 +11,7 @@ degrades to a plain "unavailable" message, so the core product never depends on 
 from __future__ import annotations
 
 import os
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -67,6 +67,31 @@ def chat(
     messages.extend(history or [])
     messages.append(("human", question))
     return invoke_text(chat_model, messages) or UNAVAILABLE_MESSAGE
+
+
+async def astream_chat(
+    question: str,
+    *,
+    context: str,
+    history: Sequence[tuple[str, str]] | None = None,
+    model: BaseChatModel | None = None,
+    api_key: str | None = None,
+) -> AsyncIterator[str]:
+    """Stream a grounded answer token-by-token (async); yields text chunks, fail-open."""
+    chat_model = model or build_model(api_key=api_key)
+    if chat_model is None:
+        yield UNAVAILABLE_MESSAGE
+        return
+    messages: list[tuple[str, str]] = [("system", _system_prompt(context))]
+    messages.extend(history or [])
+    messages.append(("human", question))
+    try:
+        async for chunk in chat_model.astream(messages):
+            content = chunk.content
+            if isinstance(content, str) and content:
+                yield content
+    except Exception:  # broad by design: a streaming error must not crash the request
+        yield "\n[chat interrupted]"
 
 
 def _system_prompt(context: str) -> str:

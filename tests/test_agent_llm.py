@@ -6,13 +6,15 @@ the optional ``llm`` extra isn't installed.
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 pytest.importorskip("langchain_core")
 
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
-from geothermal.agent import chat, narrate, run_workflow
+from geothermal.agent import astream_chat, chat, narrate, run_workflow
 from geothermal.agent.llm import UNAVAILABLE_MESSAGE, invoke_text
 
 
@@ -35,3 +37,12 @@ def test_narrate_uses_injected_model() -> None:
 
 def test_invoke_text_returns_none_on_blank_response() -> None:
     assert invoke_text(FakeListChatModel(responses=[""]), [("human", "hi")]) is None
+
+
+def test_astream_chat_streams_via_fake_model() -> None:
+    model = FakeListChatModel(responses=["streamed grounded answer"])
+
+    async def collect() -> str:
+        return "".join([chunk async for chunk in astream_chat("q", context="ctx", model=model)])
+
+    assert "streamed" in asyncio.run(collect())

@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from geothermal.assumptions import DEFAULT_ASSUMPTIONS, Assumptions
 from geothermal.economics.optimization import DesignCandidate, evaluate_candidate
+from geothermal.progress import Progress, ProgressCallback, report
 
 Objective = Literal["min_lcoe", "min_capex", "max_capacity"]
 
@@ -75,12 +76,15 @@ def search_designs(
     constraints: DesignConstraints = _NO_EXTRA_CONSTRAINTS,
     objective: Objective = "min_lcoe",
     seed: int = 0,
+    on_progress: ProgressCallback | None = None,
 ) -> SearchResult:
     """Search the design space for the best design satisfying the constraints."""
     ranges = ranges or {}
     combos = _assumption_combos(ranges, samples=samples, max_evaluations=max_evaluations, seed=seed)
+    total = len(doublet_options) * len(combos)
 
     feasible: list[DesignCandidate] = []
+    evaluated = 0
     for n_doublets in doublet_options:
         for overrides in combos:
             candidate = evaluate_candidate(
@@ -88,9 +92,14 @@ def search_designs(
             )
             if _is_feasible(candidate, constraints):
                 feasible.append(candidate)
+            evaluated += 1
+            report(
+                on_progress,
+                Progress("optimize", evaluated, total, f"Evaluating design {evaluated}/{total}"),
+            )
 
     feasible.sort(key=_objective_key(objective))
-    n_evaluated = len(doublet_options) * len(combos)
+    n_evaluated = total
     return SearchResult(
         best=feasible[0] if feasible else None,
         feasible=feasible,

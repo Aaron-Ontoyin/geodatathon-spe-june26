@@ -24,6 +24,11 @@ llm = [  # optional: conversational chat/narration over the results via OpenRout
     "langchain>=0.3",
     "langchain-openrouter>=0.1",
 ]
+web = [  # optional: the FastAPI backend for the demo app
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "sse-starlette>=2.1",
+]
 
 [project.scripts]
 geo-datathon = "geothermal.cli:main"
