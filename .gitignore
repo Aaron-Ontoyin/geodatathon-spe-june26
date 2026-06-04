@@ -25,5 +25,7 @@ dist/
 .env
 .env.local
 
-# Large source media kept out of the code repo deliverable
+# Provided challenge materials (reference only; kept locally, not part of the code deliverable)
 docs/Kick-Off Webinar.mp4
+docs/*.pptx
+docs/*.pdf
