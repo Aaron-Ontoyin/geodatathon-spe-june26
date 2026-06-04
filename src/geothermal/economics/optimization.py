@@ -49,7 +49,7 @@ def _design_for(geo_capacity_mw: float, a: Assumptions) -> SystemDesign:
 
 @dataclass(frozen=True, slots=True)
 class DesignCandidate:
-    """A sized design with its performance, cost and feasibility."""
+    """A sized design with its performance, cost, feasibility and the config it used."""
 
     n_doublets: int
     injection_temp_c: float
@@ -61,6 +61,7 @@ class DesignCandidate:
     lcoe_eur_per_gj: float
     capex_meur: float
     costs: SystemCosts
+    assumptions: Assumptions
 
 
 def evaluate_candidate(
@@ -86,6 +87,7 @@ def evaluate_candidate(
         lcoe_eur_per_gj=costs.lcoe_eur_per_gj,
         capex_meur=costs.capex_meur,
         costs=costs,
+        assumptions=a,
     )
 
 

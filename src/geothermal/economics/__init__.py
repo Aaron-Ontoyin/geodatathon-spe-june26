@@ -21,11 +21,18 @@ from geothermal.economics.optimization import (
     monte_carlo_lcoe_samples,
     optimize,
 )
+from geothermal.economics.search import (
+    DesignConstraints,
+    SearchResult,
+    search_designs,
+)
 
 __all__ = [
     "DISCOUNT_RATE",
     "ECONOMIC_LIFETIME_YEARS",
     "DesignCandidate",
+    "DesignConstraints",
+    "SearchResult",
     "SystemCosts",
     "capital_recovery_factor",
     "doublet_capacity_mw",
@@ -36,4 +43,5 @@ __all__ = [
     "levelized_cost_eur_per_mwh",
     "monte_carlo_lcoe_samples",
     "optimize",
+    "search_designs",
 ]
