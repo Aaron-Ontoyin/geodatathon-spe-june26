@@ -13,7 +13,9 @@ import { PercentilesChart } from "./components/PercentilesChart";
 import { ReportPanel } from "./components/ReportPanel";
 import { ResourceMap } from "./components/ResourceMap";
 import { StatusBar } from "./components/StatusBar";
+import { Tooltip } from "./components/Tooltip";
 import { TornadoChart } from "./components/TornadoChart";
+import { useResizable } from "./hooks/useResizable";
 import { useShortcuts } from "./hooks/useShortcuts";
 
 const INITIAL_SEARCH: SearchState = { ranges: {}, constraints: {}, objective: "min_lcoe" };
@@ -30,6 +32,7 @@ export function App() {
   const [progress, setProgress] = useState<ProgressEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showKeys, setShowKeys] = useState(false);
+  const rail = useResizable({ storageKey: "geotherm.rail-width", initial: 420, min: 300, max: 640 });
 
   useEffect(() => {
     getConfig()
@@ -174,11 +177,8 @@ export function App() {
   return (
     <div className="app">
       <StatusBar mode={mode} onMode={setMode} onRun={run} busy={busy} status={status} />
-      <div className="workspace">
+      <div className="workspace" style={{ "--rail-w": `${rail.width}px` } as React.CSSProperties}>
         <aside className="rail">
-          <div className="group-title">
-            <span className="label">Parameters</span>
-          </div>
           <InputsPanel
             config={config}
             values={values}
@@ -189,6 +189,17 @@ export function App() {
             onExport={exportToml}
           />
         </aside>
+
+        <Tooltip label="Drag to resize · double-click to reset" side="right">
+          <div
+            className={rail.dragging ? "rail-handle dragging" : "rail-handle"}
+            onPointerDown={rail.onPointerDown}
+            onDoubleClick={rail.reset}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize parameters panel"
+          />
+        </Tooltip>
 
         <main className="main">
           {error && (
