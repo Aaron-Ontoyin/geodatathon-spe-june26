@@ -87,10 +87,17 @@
       "controls controls";
     height: auto;
     padding: 10px var(--s3);
-    gap: 10px var(--s3);
+    gap: 9px var(--s3);
   }
   .sb-subtitle { display: none; }
-  .sb-controls { justify-content: space-between; }
+  .sb-controls { justify-content: space-between; gap: var(--s3); }
+  /* scale the chrome down to fit a phone */
+  .statusbar .brand { font-size: 12px; letter-spacing: 0.12em; }
+  .statusbar .btn-primary { padding: 6px 12px; font-size: 11px; }
+  .statusbar .btn-primary .kbd { display: none; } /* no keyboard on touch */
+  .statusbar .seg button { padding: 5px 9px; font-size: 10px; }
+  .statusbar .sb-status { font-size: 10px; }
+  .statusbar .led { width: 7px; height: 7px; }
 }
 .brand {
   font-family: var(--font-mono);
@@ -98,7 +105,7 @@
   letter-spacing: 0.16em;
   font-size: 14px;
 }
-.brand .dot { color: var(--heat); }
+.brand .dot { color: var(--cool); }
 .spacer { flex: 1; }
 .led {
   width: 8px;
@@ -107,7 +114,7 @@
   background: var(--good);
   box-shadow: 0 0 10px var(--good);
 }
-.led.busy { background: var(--heat); box-shadow: 0 0 10px var(--heat); animation: pulse 1s infinite; }
+.led.busy { background: var(--cool); box-shadow: 0 0 10px var(--cool); animation: pulse 1s infinite; }
 .led.off { background: var(--text-faint); box-shadow: none; }
 @keyframes pulse { 50% { opacity: 0.35; } }
 
@@ -160,12 +167,12 @@
 .btn:hover { border-color: var(--text-dim); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-primary {
-  background: linear-gradient(180deg, var(--heat), var(--heat-hi));
+  background: var(--cool);
   border-color: transparent;
-  color: #fff7f2;
+  color: #f1f5ef;
   font-weight: 600;
 }
-.btn-primary:hover { box-shadow: var(--glow-heat); }
+.btn-primary:hover { background: var(--cool-hi); box-shadow: var(--glow-cool); }
 .kbd {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -173,6 +180,12 @@
   border-radius: 4px;
   border: 1px solid var(--line-strong);
   color: var(--text-dim);
+}
+/* on the dark teal primary button the chip needs light treatment to read */
+.btn-primary .kbd {
+  color: #f1f5ef;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* ---- Segmented toggle ---- */
@@ -191,7 +204,7 @@
   color: var(--text-dim);
   border: none;
 }
-.seg button.active { background: var(--heat-dim); color: var(--heat-hi); }
+.seg button.active { background: var(--cool-dim); color: var(--cool-hi); }
 
 /* ---- Fields ---- */
 .field { margin-bottom: var(--s4); }
@@ -199,7 +212,7 @@
 .field-val { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
 .field input[type="range"] {
   width: 100%;
-  accent-color: var(--heat);
+  accent-color: var(--cool);
   height: 3px;
 }
 .field input[type="number"],
@@ -233,7 +246,7 @@
 .tbl th { text-align: right; color: var(--text-dim); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--line); }
 .tbl th:first-child, .tbl td:first-child { text-align: left; }
 .tbl td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--line); }
-.tbl tr.is-best td { color: var(--heat-hi); }
+.tbl tr.is-best td { color: var(--cool-hi); }
 
 /* ---- Tag / pill ---- */
 .tag {
@@ -260,7 +273,7 @@
   position: absolute;
   inset: 0;
   width: var(--p, 0%);
-  background: linear-gradient(90deg, var(--heat), var(--heat-hi));
+  background: linear-gradient(90deg, var(--cool), var(--cool-hi));
   transition: width 0.25s var(--ease);
 }
 .scanbar > .sheen {
@@ -275,7 +288,7 @@
 
 /* ---- Prose (report markdown) ---- */
 .prose { font-family: var(--font-sans); color: var(--text); line-height: 1.65; }
-.prose h1, .prose h2, .prose h3 { font-family: var(--font-mono); letter-spacing: 0.02em; color: var(--heat-hi); }
+.prose h1, .prose h2, .prose h3 { font-family: var(--font-mono); letter-spacing: 0.02em; color: var(--cool-hi); }
 .prose h2 { font-size: 16px; margin-top: var(--s5); }
 .prose table { border-collapse: collapse; font-family: var(--font-mono); font-size: 12px; width: 100%; }
 .prose th, .prose td { border: 1px solid var(--line); padding: 5px 9px; }
@@ -285,4 +298,4 @@
 .chat-msg { margin-bottom: var(--s3); }
 .chat-msg .who { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--text-faint); text-transform: uppercase; }
 .chat-msg.user .bubble { color: var(--text); }
-.chat-msg.bot .bubble { color: var(--text); border-left: 2px solid var(--heat); padding-left: var(--s3); }
+.chat-msg.bot .bubble { color: var(--text); border-left: 2px solid var(--cool); padding-left: var(--s3); }

@@ -117,8 +117,8 @@ export function ResourceMap({ map }: ResourceMapProps) {
 
       // Markers read across the full cream->rust ramp: a soft halo lifts them
       // off dark hotspots, a dark-ink edge defines them on the light field.
-      const INK = "#2a2620";
-      const HALO = "rgba(253, 252, 248, 0.92)";
+      const INK = "#1e2a2b";
+      const HALO = "rgba(244, 246, 238, 0.92)";
 
       // Wells.
       for (const well of map.wells) {

@@ -73,7 +73,7 @@ export function DecisionLog({ spec }: DecisionLogProps) {
             <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>
               {progress?.message ?? "Initializing agent…"}
             </span>
-            <span className="mono num" style={{ fontSize: 11, color: "var(--heat-hi)" }}>
+            <span className="mono num" style={{ fontSize: 11, color: "var(--cool-hi)" }}>
               {pct}
             </span>
           </div>
@@ -104,7 +104,7 @@ export function DecisionLog({ spec }: DecisionLogProps) {
           }}
         >
           <div className="metric">
-            <span className="metric-value" style={{ fontSize: 20, color: "var(--heat-hi)" }}>
+            <span className="metric-value" style={{ fontSize: 20, color: "var(--cool-hi)" }}>
               {summary.lcoe.toFixed(2)}
               <span className="metric-unit"> €/GJ</span>
             </span>
@@ -152,7 +152,7 @@ export function DecisionLog({ spec }: DecisionLogProps) {
                     borderRadius: "50%",
                     border: "1px solid var(--line-strong)",
                     background: "var(--bg-0)",
-                    color: "var(--heat-hi)",
+                    color: "var(--cool-hi)",
                     fontSize: 12,
                   }}
                 >
@@ -162,7 +162,7 @@ export function DecisionLog({ spec }: DecisionLogProps) {
                   <div
                     className="mono"
                     style={{
-                      color: "var(--heat-hi)",
+                      color: "var(--cool-hi)",
                       fontSize: 13,
                       letterSpacing: "0.02em",
                       marginBottom: 3,

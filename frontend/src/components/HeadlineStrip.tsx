@@ -82,7 +82,7 @@ function Metric({ caption, value, digits, unit, color, band, first, big }: Metri
 export function HeadlineStrip({ headline, doublets }: HeadlineStripProps) {
   const band = `P10 ${headline.lcoe_p10.toFixed(0)} · P90 ${headline.lcoe_p90.toFixed(0)}`;
   return (
-    <Panel accent="heat">
+    <Panel accent="cool">
       <div style={{ display: "flex", alignItems: "stretch", flexWrap: "wrap" }}>
         <Metric
           first
@@ -91,7 +91,7 @@ export function HeadlineStrip({ headline, doublets }: HeadlineStripProps) {
           value={headline.lcoe_p50}
           digits={1}
           unit="€/GJ"
-          color="var(--heat-hi)"
+          color="var(--cool-hi)"
           band={band}
         />
         <Metric

@@ -1,38 +1,39 @@
 /* GEOTHERM — design tokens.
-   Anthropic-inspired warm light scheme: ivory paper canvas, near-white cards,
-   warm-ink text, clay/terracotta heat accent, muted teal cooling accent.
-   Each accent carries a deep "-hi" variant tuned for readable TEXT on light. */
+   "Topo Vellum": cartographic light scheme. Cool stone-vellum canvas with a
+   contour-line texture, dark slate ink, deep teal as the brand/primary (and the
+   cooling accent), burnt sienna for heating — the map reading of water vs.
+   elevation. Each accent carries a deep "-hi" variant for readable TEXT on light. */
 :root {
-  /* canvas + surfaces (warm paper, light) */
-  --bg-0: #e9e5d8;   /* sunken/inset: inputs, code, scanbar track */
-  --bg-1: #f4f1e8;   /* app canvas — warm ivory */
-  --panel: #fdfcf8;  /* cards — near-white warm, lifts off the canvas */
-  --panel-2: #efebe0; /* rail / recessed sidebar */
-  --panel-hi: #ffffff; /* raised: hover, statusbar top */
+  /* canvas + surfaces (cool stone vellum) */
+  --bg-0: #e1e5da;   /* sunken/inset: inputs, code, scanbar track */
+  --bg-1: #eaeee4;   /* app canvas — stone vellum */
+  --panel: #f4f6ee;  /* cards — light stone, floats on the contoured canvas */
+  --panel-2: #e5e9df; /* rail / recessed sidebar */
+  --panel-hi: #fafbf5; /* raised: hover */
 
-  /* hairlines + framing (warm ink, low alpha) */
-  --line: rgba(58, 50, 38, 0.12);
-  --line-strong: rgba(58, 50, 38, 0.22);
+  /* hairlines + framing (cool slate, low alpha) */
+  --line: rgba(38, 52, 52, 0.14);
+  --line-strong: rgba(38, 52, 52, 0.24);
 
-  /* text (warm ink) */
-  --text: #2a2620;       /* primary — warm near-black */
-  --text-dim: #645d4e;   /* secondary — readable warm grey */
-  --text-faint: #8a8170; /* faint — labels, decorative */
+  /* text (dark slate-teal ink) */
+  --text: #1e2a2b;       /* primary */
+  --text-dim: #5a6765;   /* secondary — readable slate */
+  --text-faint: #8a9592; /* faint — labels, decorative */
 
-  /* heat / heating — Anthropic clay-terracotta (also the brand accent) */
-  --heat: #c2603f;       /* mid clay: fills, borders, LED, range thumb */
-  --heat-hi: #9e4527;    /* deep clay: accent TEXT + links (readable on light) */
-  --heat-dim: rgba(194, 96, 63, 0.13); /* pale clay wash: active bg, hover */
+  /* heat / heating — cartographic burnt sienna (map "elevation") */
+  --heat: #b06640;       /* mid sienna: fills, borders, heating series */
+  --heat-hi: #8c4626;    /* deep sienna: accent TEXT (readable on light) */
+  --heat-dim: rgba(176, 102, 64, 0.13);
 
-  /* cool / cooling — muted teal that harmonises with the warm palette */
-  --cool: #2f8f89;       /* mid teal: fills, borders, icons */
-  --cool-hi: #1f6f6a;    /* deep teal: accent TEXT (readable on light) */
-  --cool-dim: rgba(47, 143, 137, 0.13);
+  /* cool / cooling — deep teal; also the BRAND / PRIMARY accent (map "water") */
+  --cool: #2b6e7a;       /* deep teal: primary fills, brand, cooling series */
+  --cool-hi: #1c545f;    /* deeper teal: accent TEXT + links (readable on light) */
+  --cool-dim: rgba(43, 110, 122, 0.13);
 
   /* status */
   --good: #3e8e5a;
   --warn: #b07a1e;
-  --bad: #be4636;
+  --bad: #bb4a3a;
 
   /* type */
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
@@ -47,13 +48,13 @@
   --s6: 32px;
   --s7: 48px;
 
-  --radius: 9px;
-  --radius-sm: 5px;
+  --radius: 6px;
+  --radius-sm: 4px;
 
-  /* soft, warm elevation for a paper-light surface */
-  --shadow: 0 1px 2px rgba(60, 48, 30, 0.05), 0 10px 30px -16px rgba(60, 48, 30, 0.22);
-  --glow-heat: 0 0 0 1px var(--heat), 0 6px 20px -8px rgba(194, 96, 63, 0.45);
-  --glow-cool: 0 0 0 1px var(--cool), 0 6px 20px -8px rgba(47, 143, 137, 0.4);
+  /* soft, cool elevation for a paper-light surface */
+  --shadow: 0 1px 2px rgba(30, 42, 42, 0.05), 0 10px 30px -16px rgba(30, 42, 42, 0.2);
+  --glow-heat: 0 0 0 1px var(--heat), 0 6px 20px -8px rgba(176, 102, 64, 0.4);
+  --glow-cool: 0 0 0 1px var(--cool), 0 6px 20px -8px rgba(43, 110, 122, 0.4);
 
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }

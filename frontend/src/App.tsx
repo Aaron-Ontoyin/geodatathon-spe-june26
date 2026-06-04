@@ -220,7 +220,7 @@ export function App() {
           {!dashboard && !busy && (
             <div className="panel rise" style={{ padding: "var(--s7)", textAlign: "center" }}>
               <div className="brand" style={{ fontSize: 18, marginBottom: 8 }}>
-                GEOTHERM<span className="dot" style={{ color: "var(--heat)" }}>.</span>
+                GEOTHERM<span className="dot" style={{ color: "var(--cool)" }}>.</span>
               </div>
               <div style={{ color: "var(--text-dim)", maxWidth: 460, margin: "0 auto" }}>
                 Set the parameters and press <span className="kbd">⌘↵</span> Run to evaluate the

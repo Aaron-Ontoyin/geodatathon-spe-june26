@@ -22,7 +22,7 @@ body {
   overflow: hidden;
 }
 
-/* Warm paper atmosphere: faint clay/teal wash + a whisper of grain */
+/* Cartographic atmosphere: faint topographic contour rings + a whisper of grain */
 body::before {
   content: "";
   position: fixed;
@@ -30,8 +30,19 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba(194, 96, 63, 0.06), transparent 55%),
-    radial-gradient(100% 100% at 50% 120%, rgba(47, 143, 137, 0.045), transparent 60%);
+    repeating-radial-gradient(
+      circle at 13% 24%,
+      transparent 0 28px,
+      rgba(43, 110, 122, 0.05) 28px 29px,
+      transparent 29px 58px
+    ),
+    repeating-radial-gradient(
+      circle at 84% 70%,
+      transparent 0 33px,
+      rgba(43, 110, 122, 0.042) 33px 34px,
+      transparent 34px 68px
+    ),
+    radial-gradient(120% 90% at 50% -10%, rgba(43, 110, 122, 0.05), transparent 55%);
 }
 body::after {
   content: "";
@@ -69,11 +80,11 @@ body::after {
 }
 
 a {
-  color: var(--heat-hi);
+  color: var(--cool-hi);
 }
 
 ::selection {
-  background: rgba(194, 96, 63, 0.22);
+  background: rgba(43, 110, 122, 0.2);
 }
 
 /* Custom scrollbars */
@@ -82,19 +93,19 @@ a {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(58, 50, 38, 0.18);
+  background: rgba(38, 52, 52, 0.18);
   border-radius: 8px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(58, 50, 38, 0.3);
+  background: rgba(38, 52, 52, 0.3);
   background-clip: content-box;
 }
 
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-1), 0 0 0 3px var(--heat);
+  box-shadow: 0 0 0 2px var(--bg-1), 0 0 0 3px var(--cool);
   border-radius: var(--radius-sm);
 }
 
