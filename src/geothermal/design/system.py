@@ -102,9 +102,13 @@ def simulate(design: SystemDesign, demand: DemandProfile) -> SystemPerformance:
     ates_charge = _allocate(geo_charge_available_mwh, charge_mwh)
     backup_mwh = heat_remaining_mwh - ates_discharge
 
-    # --- Geothermal utilisation ---
+    # --- Geothermal utilisation (guard the dud-well case where geo capacity is 0) ---
     geo_used_mwh = geo_for_heat * hours + geo_for_abs * hours + ates_charge
     geo_capacity_mwh_year = geo * _HOURS_PER_YEAR
+    capacity_factor = float(np.sum(geo_used_mwh) / geo_capacity_mwh_year) if geo > 0 else 0.0
+    capacity_factor_heating = (
+        float(np.sum(geo_for_heat * hours) / geo_capacity_mwh_year) if geo > 0 else 0.0
+    )
 
     monthly = pd.DataFrame(
         {
@@ -131,10 +135,8 @@ def simulate(design: SystemDesign, demand: DemandProfile) -> SystemPerformance:
         heat_pump_mwh_e=float(np.sum(hp_elec) * hours),
         compression_mwh_e=float(np.sum(comp_elec) * hours),
         absorption_cool_gj=float(np.sum(abs_cool) * hours * GJ_PER_MWH),
-        geo_capacity_factor=float(np.sum(geo_used_mwh) / geo_capacity_mwh_year),
-        geo_capacity_factor_heating_only=float(
-            np.sum(geo_for_heat * hours) / geo_capacity_mwh_year
-        ),
+        geo_capacity_factor=capacity_factor,
+        geo_capacity_factor_heating_only=capacity_factor_heating,
         heating_capacity_mw=cap_heat,
         monthly=monthly,
     )
