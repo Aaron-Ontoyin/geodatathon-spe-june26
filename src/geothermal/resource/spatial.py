@@ -18,6 +18,7 @@ import numpy as np
 import numpy.typing as npt
 
 from geothermal import config
+from geothermal.assumptions import DEFAULT_ASSUMPTIONS, Assumptions
 from geothermal.io import load_thermogis
 from geothermal.resource.assessment import locate_demand_center
 from geothermal.resource.power import well_power_mw
@@ -27,7 +28,6 @@ FloatArray = npt.NDArray[np.float64]
 _IDW_POWER = 2.0
 _IDW_EPS = 1.0e-6
 _GRID_MARGIN_M = 2000.0
-_DEMAND_WEIGHT_MW_PER_KM = 0.1  # trade pipeline distance against deliverable power
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,11 +95,13 @@ def resource_grid(n: int = 80) -> ResourceGrid:
     )
 
 
-def recommend_new_well(*, min_spacing_km: float = 1.5, grid_n: int = 120) -> dict[str, float]:
+def recommend_new_well(
+    *, assumptions: Assumptions = DEFAULT_ASSUMPTIONS, grid_n: int = 120
+) -> dict[str, float]:
     """Recommend a new doublet location: high power, well-spaced, near the demand.
 
     Scores grid cells by ``power − weight · distance_to_demand`` among cells at least
-    ``min_spacing_km`` from every existing well, and returns the best one.
+    ``min_well_spacing_km`` from every existing well, and returns the best one.
     """
     grid = resource_grid(grid_n)
     usp_x, usp_y = locate_demand_center()
@@ -110,8 +112,10 @@ def recommend_new_well(*, min_spacing_km: float = 1.5, grid_n: int = 120) -> dic
     )
     demand_km = np.hypot(grid.x - usp_x, grid.y - usp_y) / 1000.0
 
-    spaced = nearest_well_km >= min_spacing_km
-    score = np.where(spaced, grid.power_mw - _DEMAND_WEIGHT_MW_PER_KM * demand_km, -np.inf)
+    spaced = nearest_well_km >= assumptions.min_well_spacing_km
+    score = np.where(
+        spaced, grid.power_mw - assumptions.demand_distance_weight_mw_per_km * demand_km, -np.inf
+    )
     idx = np.unravel_index(int(np.argmax(score)), score.shape)
     return {
         "x": float(grid.x[idx]),

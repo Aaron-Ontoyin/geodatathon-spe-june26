@@ -12,7 +12,7 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from geothermal import config
+from geothermal.assumptions import DEFAULT_ASSUMPTIONS, Assumptions
 
 FloatArray = npt.NDArray[np.float64]
 
@@ -33,16 +33,12 @@ class DemandProfile:
     cooling_mw: FloatArray
 
 
-def district_demand(
-    *,
-    heating_peak_mw: float = config.HEATING_DEMAND_MWTH,
-    cooling_peak_mw: float = config.COOLING_DEMAND_MWTH,
-) -> DemandProfile:
-    """Monthly demand profile scaled to the given peak heating/cooling loads."""
+def district_demand(*, assumptions: Assumptions = DEFAULT_ASSUMPTIONS) -> DemandProfile:
+    """Monthly demand profile scaled to the config's peak heating/cooling loads."""
     return DemandProfile(
         month=np.arange(1, 13, dtype=float),
-        heating_mw=_HEATING_SHAPE * heating_peak_mw,
-        cooling_mw=_COOLING_SHAPE * cooling_peak_mw,
+        heating_mw=_HEATING_SHAPE * assumptions.heating_peak_mw,
+        cooling_mw=_COOLING_SHAPE * assumptions.cooling_peak_mw,
     )
 
 

@@ -1,10 +1,10 @@
 """Hybrid system cost model → system LCoE.
 
-Capital and operating costs of the integrated heating + cooling system, combining
-the provided LCOE.xlsx assumptions (well/pump cost, O&M, electricity price,
-circulation-pump COP) with documented public unit costs for the surface components
-(heat pump, absorption/compression chillers, HT-ATES, backup boiler). The headline
-metric is the LCoE over the *combined* heat + cold delivered.
+Capital and operating costs of the integrated heating + cooling system. Every unit
+cost and price is read from the :class:`~geothermal.assumptions.Assumptions` config
+(defaults from LCOE.xlsx + documented public ranges), so the optimiser, sensitivity
+tests and app can vary them. The headline metric is the LCoE over the *combined*
+heat + cold delivered.
 """
 
 from __future__ import annotations
@@ -14,28 +14,9 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
+from geothermal.assumptions import DEFAULT_ASSUMPTIONS, Assumptions
 from geothermal.design.system import SystemDesign, SystemPerformance, heating_capacity_mw
 from geothermal.economics.lcoe import GJ_PER_MWH, levelized_cost_eur_per_gj
-
-# --- Subsurface (from LCOE.xlsx) ---
-WELL_COST_MEUR = 3.237
-PUMP_COST_MEUR = 0.3
-CIRCULATION_PUMP_COP = 27.0
-
-# --- Surface unit costs (documented public ranges; M€ unless noted) ---
-HEAT_PLANT_KEUR_PER_MWTH = 150.0  # LCOE.xlsx direct-heat surface installation
-HEAT_PUMP_KEUR_PER_MWTH = 700.0  # large industrial heat pump
-ABSORPTION_KEUR_PER_MWTH = 400.0  # absorption chiller
-COMPRESSION_KEUR_PER_MWTH = 150.0  # electric compression chiller
-BACKUP_KEUR_PER_MWTH = 60.0  # gas peak boiler
-ATES_MEUR = 2.0  # HT-ATES doublet + heat exchangers
-
-# --- Operating costs ---
-ELECTRICITY_PRICE_EUR_PER_MWHE = 150.0  # LCOE.xlsx
-GAS_PRICE_EUR_PER_MWHTH = 35.0  # NL wholesale gas (fuel)
-VARIABLE_OM_EUR_PER_MWHTH = 5.556  # LCOE.xlsx
-FIXED_OM_RATE = 0.01  # fraction of CAPEX per year, LCOE.xlsx
-BACKUP_BOILER_EFFICIENCY = 0.92
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,46 +31,59 @@ class SystemCosts:
 
 
 def evaluate_costs(
-    n_doublets: int, design: SystemDesign, performance: SystemPerformance
+    n_doublets: int,
+    design: SystemDesign,
+    performance: SystemPerformance,
+    *,
+    assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
 ) -> SystemCosts:
     """Compute CAPEX, OPEX and LCoE for a sized hybrid system."""
+    a = assumptions
     cap_heat = heating_capacity_mw(design)
     monthly = performance.monthly
 
     breakdown = {
-        "wells_pumps": n_doublets * (2 * WELL_COST_MEUR + PUMP_COST_MEUR),
-        "heat_plant": cap_heat * HEAT_PLANT_KEUR_PER_MWTH / 1000.0,
-        "heat_pump": cap_heat * HEAT_PUMP_KEUR_PER_MWTH / 1000.0,
-        "absorption_chiller": _peak(monthly, "abs_cool_mw") * ABSORPTION_KEUR_PER_MWTH / 1000.0,
-        "compression_chiller": _peak(monthly, "comp_cool_mw") * COMPRESSION_KEUR_PER_MWTH / 1000.0,
-        "backup_boiler": _peak(monthly, "backup_mw") * BACKUP_KEUR_PER_MWTH / 1000.0,
-        "ht_ates": ATES_MEUR if performance.ates_discharge_gj > 1.0 else 0.0,
+        "wells_pumps": n_doublets * (2 * a.well_cost_meur + a.pump_cost_meur),
+        "heat_plant": cap_heat * a.heat_plant_keur_per_mwth / 1000.0,
+        "heat_pump": cap_heat * a.heat_pump_keur_per_mwth / 1000.0,
+        "absorption_chiller": _peak(monthly, "abs_cool_mw") * a.absorption_keur_per_mwth / 1000.0,
+        "compression_chiller": _peak(monthly, "comp_cool_mw")
+        * a.compression_keur_per_mwth
+        / 1000.0,
+        "backup_boiler": _peak(monthly, "backup_mw") * a.backup_keur_per_mwth / 1000.0,
+        "ht_ates": a.ates_meur if performance.ates_discharge_gj > 1.0 else 0.0,
     }
     capex_meur = sum(breakdown.values())
     capex_eur = capex_meur * 1.0e6
 
     thermal_mwh = (performance.heat_delivered_gj + performance.cool_delivered_gj) / GJ_PER_MWH
-    circulation_mwh_e = (performance.geo_heat_gj / GJ_PER_MWH) / CIRCULATION_PUMP_COP
+    circulation_mwh_e = (performance.geo_heat_gj / GJ_PER_MWH) / a.circulation_pump_cop
     electricity_mwh_e = (
         performance.heat_pump_mwh_e + performance.compression_mwh_e + circulation_mwh_e
     )
-    gas_mwh = (performance.backup_heat_gj / GJ_PER_MWH) / BACKUP_BOILER_EFFICIENCY
+    gas_mwh = (performance.backup_heat_gj / GJ_PER_MWH) / a.backup_boiler_efficiency
 
     annual_opex_eur = (
-        VARIABLE_OM_EUR_PER_MWHTH * thermal_mwh
-        + ELECTRICITY_PRICE_EUR_PER_MWHE * electricity_mwh_e
-        + GAS_PRICE_EUR_PER_MWHTH * gas_mwh
-        + FIXED_OM_RATE * capex_eur
+        a.variable_om_eur_per_mwhth * thermal_mwh
+        + a.electricity_price_eur_per_mwhe * electricity_mwh_e
+        + a.gas_price_eur_per_mwhth * gas_mwh
+        + a.fixed_om_rate * capex_eur
     )
 
     combined_gj = performance.heat_delivered_gj + performance.cool_delivered_gj
     lcoe = levelized_cost_eur_per_gj(
-        capex_eur=capex_eur, annual_opex_eur=annual_opex_eur, annual_energy_gj=combined_gj
+        capex_eur=capex_eur,
+        annual_opex_eur=annual_opex_eur,
+        annual_energy_gj=combined_gj,
+        discount_rate=a.discount_rate,
+        lifetime_years=a.economic_lifetime_years,
     )
     lcoe_heat_only = levelized_cost_eur_per_gj(
         capex_eur=capex_eur,
         annual_opex_eur=annual_opex_eur,
         annual_energy_gj=performance.heat_delivered_gj,
+        discount_rate=a.discount_rate,
+        lifetime_years=a.economic_lifetime_years,
     )
     return SystemCosts(
         capex_meur=capex_meur,

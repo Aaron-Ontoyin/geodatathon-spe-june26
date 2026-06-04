@@ -1,9 +1,9 @@
 """Least-LCoE design optimisation and Monte-Carlo LCoE bands (Phase 4).
 
 Couples resource (Phase 2 power), design (Phase 3 dispatch) and cost (Phase 4) into
-a single evaluation, sweeps the design space for the minimum-LCoE system that meets
-the demand without leaning on backup, and propagates the (large) transmissivity
-uncertainty into an LCoE P10/P50/P90 band.
+a single evaluation driven by the :class:`~geothermal.assumptions.Assumptions` config,
+sweeps the design space for the minimum-LCoE system that meets demand without leaning
+on backup, and propagates the (large) transmissivity uncertainty into an LCoE band.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from geothermal.assumptions import DEFAULT_ASSUMPTIONS, Assumptions
 from geothermal.design import SystemDesign, district_demand, heating_capacity_mw, simulate
 from geothermal.economics.costs import SystemCosts, evaluate_costs
 from geothermal.resource.power import well_power_mw
@@ -19,8 +20,6 @@ from geothermal.resource.power import well_power_mw
 # A favourable BLT-class doublet in the NE trend (the sited target).
 REPRESENTATIVE_TRANSMISSIVITY_DM = 9.0
 REPRESENTATIVE_TEMPERATURE_C = 77.0
-DESIGN_INJECTION_TEMP_C = 30.0  # heat-pump-assisted district-heating return
-MAX_BACKUP_FRACTION = 0.15  # a geothermal-based system, not a gas plant in disguise
 
 # Transmissivity P90 / P50 / P10 (Dm) for a BLT-class location — wide uncertainty.
 _TRANS_P90, _TRANS_P50, _TRANS_P10 = 1.3, 9.3, 66.1
@@ -28,13 +27,24 @@ _Z80 = 1.2816  # z-score for the P10/P90 (10/90) lognormal span
 
 
 def doublet_capacity_mw(
-    injection_temp_c: float = DESIGN_INJECTION_TEMP_C,
+    injection_temp_c: float = DEFAULT_ASSUMPTIONS.injection_temp_c,
     *,
     transmissivity_dm: float = REPRESENTATIVE_TRANSMISSIVITY_DM,
     temperature_c: float = REPRESENTATIVE_TEMPERATURE_C,
 ) -> float:
     """Thermal capacity (MW) of one representative doublet at a chosen injection temp."""
     return float(well_power_mw(transmissivity_dm, temperature_c, injection_temp_c=injection_temp_c))
+
+
+def _design_for(geo_capacity_mw: float, a: Assumptions) -> SystemDesign:
+    return SystemDesign(
+        geo_capacity_mw=geo_capacity_mw,
+        heat_pump_cop=a.heat_pump_cop,
+        absorption_cop=a.absorption_cop,
+        compression_cop=a.compression_cop,
+        free_cooling_mw=a.free_cooling_mw,
+        ates_round_trip=a.ates_round_trip,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,27 +64,25 @@ class DesignCandidate:
 
 
 def evaluate_candidate(
-    n_doublets: int,
-    *,
-    injection_temp_c: float = DESIGN_INJECTION_TEMP_C,
-    heat_pump_cop: float = 4.5,
+    n_doublets: int, *, assumptions: Assumptions = DEFAULT_ASSUMPTIONS
 ) -> DesignCandidate:
     """Build, simulate and cost one design; flag whether it meets demand on geothermal."""
-    geo_capacity = n_doublets * doublet_capacity_mw(injection_temp_c)
-    design = SystemDesign(geo_capacity_mw=geo_capacity, heat_pump_cop=heat_pump_cop)
-    perf = simulate(design, district_demand())
-    costs = evaluate_costs(n_doublets, design, perf)
+    a = assumptions
+    geo_capacity = n_doublets * doublet_capacity_mw(a.injection_temp_c)
+    design = _design_for(geo_capacity, a)
+    perf = simulate(design, district_demand(assumptions=a))
+    costs = evaluate_costs(n_doublets, design, perf, assumptions=a)
     backup_fraction = (
         perf.backup_heat_gj / perf.heat_delivered_gj if perf.heat_delivered_gj else 1.0
     )
     return DesignCandidate(
         n_doublets=n_doublets,
-        injection_temp_c=injection_temp_c,
-        heat_pump_cop=heat_pump_cop,
+        injection_temp_c=a.injection_temp_c,
+        heat_pump_cop=a.heat_pump_cop,
         geo_capacity_mw=geo_capacity,
         heating_capacity_mw=heating_capacity_mw(design),
         backup_fraction=backup_fraction,
-        meets_demand=backup_fraction <= MAX_BACKUP_FRACTION,
+        meets_demand=backup_fraction <= a.max_backup_fraction,
         lcoe_eur_per_gj=costs.lcoe_eur_per_gj,
         capex_meur=costs.capex_meur,
         costs=costs,
@@ -84,14 +92,10 @@ def evaluate_candidate(
 def optimize(
     *,
     doublet_options: tuple[int, ...] = (1, 2, 3),
-    injection_temp_c: float = DESIGN_INJECTION_TEMP_C,
-    heat_pump_cop: float = 4.5,
+    assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
 ) -> list[DesignCandidate]:
     """Return feasible designs sorted by ascending LCoE (best first)."""
-    candidates = [
-        evaluate_candidate(n, injection_temp_c=injection_temp_c, heat_pump_cop=heat_pump_cop)
-        for n in doublet_options
-    ]
+    candidates = [evaluate_candidate(n, assumptions=assumptions) for n in doublet_options]
     feasible = [c for c in candidates if c.meets_demand]
     return sorted(feasible, key=lambda c: c.lcoe_eur_per_gj)
 
@@ -99,42 +103,37 @@ def optimize(
 def monte_carlo_lcoe_samples(
     n_doublets: int,
     *,
-    injection_temp_c: float = DESIGN_INJECTION_TEMP_C,
-    heat_pump_cop: float = 4.5,
+    assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
     n_samples: int = 2000,
     seed: int = 42,
 ) -> np.ndarray:
     """Sample LCoE under the lognormal transmissivity uncertainty (correlated field)."""
+    a = assumptions
     rng = np.random.default_rng(seed)
     mu = np.log(_TRANS_P50)
     sigma = (np.log(_TRANS_P10) - np.log(_TRANS_P90)) / (2.0 * _Z80)
-    demand = district_demand()
+    demand = district_demand(assumptions=a)
 
     lcoes = np.empty(n_samples, dtype=float)
     for i in range(n_samples):
         transmissivity = float(rng.lognormal(mu, sigma))
-        geo = n_doublets * doublet_capacity_mw(injection_temp_c, transmissivity_dm=transmissivity)
-        design = SystemDesign(geo_capacity_mw=geo, heat_pump_cop=heat_pump_cop)
+        geo = n_doublets * doublet_capacity_mw(a.injection_temp_c, transmissivity_dm=transmissivity)
+        design = _design_for(geo, a)
         perf = simulate(design, demand)
-        lcoes[i] = evaluate_costs(n_doublets, design, perf).lcoe_eur_per_gj
+        lcoes[i] = evaluate_costs(n_doublets, design, perf, assumptions=a).lcoe_eur_per_gj
     return lcoes
 
 
 def lcoe_monte_carlo(
     n_doublets: int,
     *,
-    injection_temp_c: float = DESIGN_INJECTION_TEMP_C,
-    heat_pump_cop: float = 4.5,
+    assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
     n_samples: int = 2000,
     seed: int = 42,
 ) -> dict[str, float]:
     """Monte-Carlo LCoE band (P10/P50/P90 and mean) from the transmissivity uncertainty."""
     lcoes = monte_carlo_lcoe_samples(
-        n_doublets,
-        injection_temp_c=injection_temp_c,
-        heat_pump_cop=heat_pump_cop,
-        n_samples=n_samples,
-        seed=seed,
+        n_doublets, assumptions=assumptions, n_samples=n_samples, seed=seed
     )
     return {
         "p10": float(np.percentile(lcoes, 10)),
