@@ -6,8 +6,6 @@ right downstream number — proof that every lever is a real, wired parameter.
 
 from __future__ import annotations
 
-import dataclasses
-
 import numpy as np
 import pytest
 
@@ -28,7 +26,9 @@ def test_higher_electricity_price_raises_lcoe() -> None:
     base = evaluate_candidate(1).lcoe_eur_per_gj
     pricey = evaluate_candidate(
         1,
-        assumptions=dataclasses.replace(DEFAULT_ASSUMPTIONS, electricity_price_eur_per_mwhe=300.0),
+        assumptions=DEFAULT_ASSUMPTIONS.model_copy(
+            update={"electricity_price_eur_per_mwhe": 300.0}
+        ),
     ).lcoe_eur_per_gj
     assert pricey > base
 
@@ -36,21 +36,21 @@ def test_higher_electricity_price_raises_lcoe() -> None:
 def test_cheaper_wells_lower_capex() -> None:
     base = evaluate_candidate(2).capex_meur
     cheap = evaluate_candidate(
-        2, assumptions=dataclasses.replace(DEFAULT_ASSUMPTIONS, well_cost_meur=1.0)
+        2, assumptions=DEFAULT_ASSUMPTIONS.model_copy(update={"well_cost_meur": 1.0})
     ).capex_meur
     assert cheap < base
 
 
 def test_demand_peaks_flow_through() -> None:
     profile = district_demand(
-        assumptions=dataclasses.replace(DEFAULT_ASSUMPTIONS, heating_peak_mw=20.0)
+        assumptions=DEFAULT_ASSUMPTIONS.model_copy(update={"heating_peak_mw": 20.0})
     )
     assert float(np.max(profile.heating_mw)) == pytest.approx(20.0)
 
 
 def test_well_spacing_constraint_is_honoured() -> None:
     rec = recommend_new_well(
-        assumptions=dataclasses.replace(DEFAULT_ASSUMPTIONS, min_well_spacing_km=3.0)
+        assumptions=DEFAULT_ASSUMPTIONS.model_copy(update={"min_well_spacing_km": 3.0})
     )
     for wid in config.WELL_IDS:
         w = config.WELLS[wid]

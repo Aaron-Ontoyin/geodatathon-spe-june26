@@ -13,13 +13,13 @@ winner to report the P10/P90 risk.
 
 from __future__ import annotations
 
-import dataclasses
 import itertools
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
+from pydantic import BaseModel, ConfigDict, Field
 
 from geothermal.assumptions import DEFAULT_ASSUMPTIONS, Assumptions
 from geothermal.economics.optimization import DesignCandidate, evaluate_candidate
@@ -27,15 +27,29 @@ from geothermal.economics.optimization import DesignCandidate, evaluate_candidat
 Objective = Literal["min_lcoe", "min_capex", "max_capacity"]
 
 
-@dataclass(frozen=True, slots=True)
-class DesignConstraints:
+class DesignConstraints(BaseModel):
     """Hard requirements a design must satisfy to be considered."""
 
-    max_backup_fraction: float = DEFAULT_ASSUMPTIONS.max_backup_fraction
-    max_lcoe_eur_per_gj: float | None = None
-    max_capex_meur: float | None = None
-    min_geo_capacity_mw: float | None = None
-    min_heating_capacity_mw: float | None = None
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    max_backup_fraction: float = Field(
+        default=DEFAULT_ASSUMPTIONS.max_backup_fraction,
+        ge=0,
+        le=1,
+        description="Max heat share from backup.",
+    )
+    max_lcoe_eur_per_gj: float | None = Field(
+        default=None, gt=0, description="Optional LCoE cap (€/GJ)."
+    )
+    max_capex_meur: float | None = Field(
+        default=None, gt=0, description="Optional CAPEX budget (M€)."
+    )
+    min_geo_capacity_mw: float | None = Field(
+        default=None, ge=0, description="Optional firm geothermal floor (MW)."
+    )
+    min_heating_capacity_mw: float | None = Field(
+        default=None, ge=0, description="Optional heating-capacity floor (MW)."
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +84,7 @@ def search_designs(
     for n_doublets in doublet_options:
         for overrides in combos:
             candidate = evaluate_candidate(
-                n_doublets, assumptions=dataclasses.replace(base, **overrides)
+                n_doublets, assumptions=base.model_copy(update=overrides)
             )
             if _is_feasible(candidate, constraints):
                 feasible.append(candidate)

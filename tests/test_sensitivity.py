@@ -7,8 +7,6 @@ the robustness claim we make in the report.
 
 from __future__ import annotations
 
-import dataclasses
-
 import numpy as np
 
 from geothermal.assumptions import DEFAULT_ASSUMPTIONS
@@ -45,8 +43,8 @@ def test_tornado_ranks_drivers_by_swing() -> None:
 def test_recommendation_robust_to_demand_weight() -> None:
     for weight in (0.0, 0.1, 0.5):
         rec = recommend_new_well(
-            assumptions=dataclasses.replace(
-                DEFAULT_ASSUMPTIONS, demand_distance_weight_mw_per_km=weight
+            assumptions=DEFAULT_ASSUMPTIONS.model_copy(
+                update={"demand_distance_weight_mw_per_km": weight}
             )
         )
         assert rec["distance_to_blt_km"] < 3.0  # always steps out by the proven hotspot
@@ -55,7 +53,7 @@ def test_recommendation_robust_to_demand_weight() -> None:
 def test_recommendation_robust_to_well_spacing() -> None:
     for spacing in (1.0, 1.5, 2.0):
         rec = recommend_new_well(
-            assumptions=dataclasses.replace(DEFAULT_ASSUMPTIONS, min_well_spacing_km=spacing)
+            assumptions=DEFAULT_ASSUMPTIONS.model_copy(update={"min_well_spacing_km": spacing})
         )
         assert rec["power_mw_p50"] > 1.0
         assert rec["distance_to_usp_km"] < 6.0

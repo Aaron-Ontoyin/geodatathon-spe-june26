@@ -1,0 +1,43 @@
+# Geothermal Datathon — input file (TOML).
+# Uncomment and edit any value to override its default; omitted values use the default.
+
+[assumptions]
+# heating_peak_mw = 10.0  # Peak district heating demand (MWth).
+# cooling_peak_mw = 5.0  # Peak district cooling demand (MWth).
+# heat_pump_cop = 4.5  # Heat-pump coefficient of performance.
+# absorption_cop = 0.7  # Absorption-chiller COP (cooling/heat).
+# compression_cop = 5.0  # Electric compression-chiller COP.
+# free_cooling_mw = 1.0  # Free-cooling capacity from the cold side (MW).
+# ates_round_trip = 0.75  # HT-ATES seasonal round-trip efficiency.
+# injection_temp_c = 30.0  # Reinjection temperature (°C).
+# min_well_spacing_km = 1.5  # Min doublet spacing (km) to avoid breakthrough.
+# demand_distance_weight_mw_per_km = 0.1  # Siting tie-breaker: MW traded per km closer to demand.
+# well_cost_meur = 3.237  # Cost per well (M€).
+# pump_cost_meur = 0.3  # Pump cost per doublet (M€).
+# heat_plant_keur_per_mwth = 150.0  # Surface heat plant (k€/MWth).
+# heat_pump_keur_per_mwth = 700.0  # Heat pump (k€/MWth).
+# absorption_keur_per_mwth = 400.0  # Absorption chiller (k€/MWth).
+# compression_keur_per_mwth = 150.0  # Compression chiller (k€/MWth).
+# backup_keur_per_mwth = 60.0  # Gas peak boiler (k€/MWth).
+# ates_meur = 2.0  # HT-ATES doublet + heat exchangers (M€).
+# electricity_price_eur_per_mwhe = 150.0  # Electricity price (€/MWhe).
+# gas_price_eur_per_mwhth = 35.0  # Gas fuel price (€/MWhth).
+# variable_om_eur_per_mwhth = 5.556  # Variable O&M (€/MWhth).
+# fixed_om_rate = 0.01  # Fixed O&M as a fraction of CAPEX per year.
+# circulation_pump_cop = 27.0  # Circulation-pump COP (thermal/electric).
+# backup_boiler_efficiency = 0.92  # Backup boiler efficiency.
+# discount_rate = 0.093  # Effective discount rate (reproduces LCOE.xlsx).
+# economic_lifetime_years = 15  # Economic lifetime (years).
+# max_backup_fraction = 0.15  # Max share of heat from backup for a design to count as geothermal.
+
+# Optional: let the optimiser SEARCH ranges and honour constraints.
+# [search.ranges]
+# injection_temp_c = [25.0, 40.0]
+# heat_pump_cop = [4.0, 5.5]
+
+# [search.constraints]
+# max_capex_meur = 25.0
+# max_lcoe_eur_per_gj = 30.0
+
+# [search]
+# objective = "min_lcoe"   # or "min_capex" or "max_capacity"

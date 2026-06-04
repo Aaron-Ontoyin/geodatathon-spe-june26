@@ -8,7 +8,6 @@ that tells judges which numbers actually matter (and which assumptions don't).
 
 from __future__ import annotations
 
-import dataclasses
 import math
 from collections.abc import Sequence
 
@@ -24,7 +23,7 @@ def lcoe_sensitivity(
     """Re-optimise across values of one assumption; return value → best design + LCoE."""
     rows: list[dict[str, float]] = []
     for value in values:
-        candidates = optimize(assumptions=dataclasses.replace(base, **{field: value}))
+        candidates = optimize(assumptions=base.model_copy(update={field: value}))
         best = candidates[0] if candidates else None
         rows.append(
             {
@@ -46,11 +45,11 @@ def tornado(
             "field": name,
             "low": low,
             "high": high,
-            "lcoe_low": _best_lcoe(dataclasses.replace(base, **{name: low})),
-            "lcoe_high": _best_lcoe(dataclasses.replace(base, **{name: high})),
+            "lcoe_low": _best_lcoe(base.model_copy(update={name: low})),
+            "lcoe_high": _best_lcoe(base.model_copy(update={name: high})),
             "swing": abs(
-                _best_lcoe(dataclasses.replace(base, **{name: high}))
-                - _best_lcoe(dataclasses.replace(base, **{name: low}))
+                _best_lcoe(base.model_copy(update={name: high}))
+                - _best_lcoe(base.model_copy(update={name: low}))
             ),
         }
         for name, (low, high) in fields.items()

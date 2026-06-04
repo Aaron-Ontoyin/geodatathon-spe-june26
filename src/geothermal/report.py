@@ -9,7 +9,6 @@ a judge can regenerate it. An optional LLM chat can sit on top, but never replac
 
 from __future__ import annotations
 
-import dataclasses
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -207,7 +206,7 @@ def _economics(ranked: list[DesignCandidate], best: DesignCandidate, band: dict[
 
 
 def _assumptions(a: Assumptions) -> str:
-    rows: list[Sequence[object]] = [[k, v] for k, v in dataclasses.asdict(a).items()]
+    rows: list[Sequence[object]] = [[k, v] for k, v in a.model_dump().items()]
     table = _md_table(["Parameter", "Value"], rows)
     return (
         "## 5. Assumptions\n\n"
