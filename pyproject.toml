@@ -20,6 +20,10 @@ dependencies = [
 
 [project.optional-dependencies]
 notebook = ["jupyter>=1.0", "ipykernel>=6.29", "nbformat>=5.10"]
+llm = [  # optional: conversational chat/narration over the results via OpenRouter
+    "langchain>=0.3",
+    "langchain-openrouter>=0.1",
+]
 
 [dependency-groups]
 dev = ["ruff>=0.6", "pyright>=1.1.380", "pytest>=8.3"]

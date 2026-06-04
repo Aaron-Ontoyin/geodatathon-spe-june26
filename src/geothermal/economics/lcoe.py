@@ -47,10 +47,13 @@ def levelized_cost_eur_per_gj(
     lifetime_years: int = ECONOMIC_LIFETIME_YEARS,
 ) -> float:
     """Levelized cost (€/GJ) of delivered energy."""
-    return levelized_cost_eur_per_mwh(
-        capex_eur=capex_eur,
-        annual_opex_eur=annual_opex_eur,
-        annual_energy_mwh=annual_energy_gj / GJ_PER_MWH,
-        discount_rate=discount_rate,
-        lifetime_years=lifetime_years,
-    ) / GJ_PER_MWH
+    return (
+        levelized_cost_eur_per_mwh(
+            capex_eur=capex_eur,
+            annual_opex_eur=annual_opex_eur,
+            annual_energy_mwh=annual_energy_gj / GJ_PER_MWH,
+            discount_rate=discount_rate,
+            lifetime_years=lifetime_years,
+        )
+        / GJ_PER_MWH
+    )
