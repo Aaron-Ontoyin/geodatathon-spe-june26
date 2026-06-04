@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { parse as parseToml } from "smol-toml";
 
 import { analyze, getConfig, getReport, streamOptimize } from "./api/client";
-import type { Assumptions, ConfigResponse, Dashboard, InputSpec, ProgressEvent } from "./api/types";
+import type {
+  Assumptions,
+  ConfigResponse,
+  Dashboard,
+  InputSpec,
+  Objective,
+  ProgressEvent,
+} from "./api/types";
 import { ChatDock } from "./components/ChatDock";
 import { ComparisonTable } from "./components/ComparisonTable";
 import { DecisionLog } from "./components/DecisionLog";
 import { DispatchChart } from "./components/DispatchChart";
+import { OPTIMISABLE } from "./components/fieldGroups";
 import { HeadlineStrip } from "./components/HeadlineStrip";
+import { HelpDock } from "./components/HelpDock";
 import { InputsPanel, type SearchState } from "./components/InputsPanel";
 import { MonteCarloChart } from "./components/MonteCarloChart";
 import { PercentilesChart } from "./components/PercentilesChart";
@@ -15,15 +25,22 @@ import { ResourceMap } from "./components/ResourceMap";
 import { StatusBar } from "./components/StatusBar";
 import { Tooltip } from "./components/Tooltip";
 import { TornadoChart } from "./components/TornadoChart";
+import { usePersistentState } from "./hooks/usePersistentState";
 import { useResizable } from "./hooks/useResizable";
 import { useShortcuts } from "./hooks/useShortcuts";
 
 const INITIAL_SEARCH: SearchState = { ranges: {}, constraints: {}, objective: "min_lcoe" };
 
+const asNumber = (v: unknown): number | undefined => (typeof v === "number" ? v : undefined);
+const asNumberPair = (v: unknown): [number, number] | undefined =>
+  Array.isArray(v) && v.length === 2 && typeof v[0] === "number" && typeof v[1] === "number"
+    ? [v[0], v[1]]
+    : undefined;
+
 export function App() {
   const [config, setConfig] = useState<ConfigResponse | null>(null);
   const [values, setValues] = useState<Assumptions>({});
-  const [mode, setMode] = useState<"single" | "optimize">("single");
+  const [mode, setMode] = usePersistentState<"single" | "optimize">("geotherm.mode", "single");
   const [search, setSearch] = useState<SearchState>(INITIAL_SEARCH);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [reportMd, setReportMd] = useState<string | null>(null);
@@ -51,7 +68,10 @@ export function App() {
         constraints.max_capex_meur = search.constraints.max_capex_meur;
       if (search.constraints.max_lcoe_eur_per_gj != null)
         constraints.max_lcoe_eur_per_gj = search.constraints.max_lcoe_eur_per_gj;
-      spec.search = { ranges: search.ranges, constraints, objective: search.objective };
+      const ranges = Object.fromEntries(
+        Object.entries(search.ranges).filter(([k]) => OPTIMISABLE.has(k)),
+      );
+      spec.search = { ranges, constraints, objective: search.objective };
     }
     return spec;
   }, [values, mode, search]);
@@ -134,6 +154,51 @@ export function App() {
     URL.revokeObjectURL(url);
   }, [values, mode, search]);
 
+  const importToml = useCallback(
+    (file: File) => {
+      setError(null);
+      file
+        .text()
+        .then((text) => {
+          const doc = parseToml(text) as Record<string, unknown>;
+          const rawA = (doc.assumptions ?? {}) as Record<string, unknown>;
+          const known = config ? new Set(config.fields.map((f) => f.name)) : null;
+          setValues((prev) => {
+            const next: Assumptions = { ...prev };
+            for (const [k, v] of Object.entries(rawA)) {
+              const n = asNumber(v);
+              if (n !== undefined && (!known || known.has(k))) next[k] = n;
+            }
+            return next;
+          });
+
+          const rawS = (doc.search ?? {}) as Record<string, unknown>;
+          const rawRanges = (rawS.ranges ?? {}) as Record<string, unknown>;
+          const rawCons = (rawS.constraints ?? {}) as Record<string, unknown>;
+          const ranges: Record<string, [number, number]> = {};
+          for (const [k, v] of Object.entries(rawRanges)) {
+            const pair = asNumberPair(v);
+            if (pair && OPTIMISABLE.has(k)) ranges[k] = pair;
+          }
+          const constraints: SearchState["constraints"] = {};
+          const cap = asNumber(rawCons.max_capex_meur);
+          const lco = asNumber(rawCons.max_lcoe_eur_per_gj);
+          if (cap !== undefined) constraints.max_capex_meur = cap;
+          if (lco !== undefined) constraints.max_lcoe_eur_per_gj = lco;
+          const obj = rawS.objective;
+          const objective: Objective =
+            obj === "min_capex" || obj === "max_capacity" ? obj : "min_lcoe";
+
+          if (Object.keys(ranges).length || cap !== undefined || lco !== undefined || obj !== undefined) {
+            setSearch({ ranges, constraints, objective });
+            if (Object.keys(ranges).length) setMode("optimize");
+          }
+        })
+        .catch((e: unknown) => setError(`Could not read TOML: ${String(e)}`));
+    },
+    [config],
+  );
+
   const downloadReport = useCallback(() => {
     if (!reportMd) return;
     const url = URL.createObjectURL(new Blob([reportMd], { type: "text/markdown" }));
@@ -187,6 +252,7 @@ export function App() {
             search={search}
             onSearch={setSearch}
             onExport={exportToml}
+            onImport={importToml}
           />
         </aside>
 
@@ -319,6 +385,8 @@ export function App() {
           </div>
         </div>
       )}
+
+      <HelpDock />
     </div>
   );
 }

@@ -87,20 +87,31 @@ a {
   background: rgba(43, 110, 122, 0.2);
 }
 
-/* Custom scrollbars */
+/* Scrollbars — invisible at rest; fade in only while the pointer is over the
+   scroll area (and firm up on the thumb itself). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*:hover {
+  scrollbar-color: rgba(38, 52, 52, 0.2) transparent;
+}
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(38, 52, 52, 0.18);
-  border-radius: 8px;
-  border: 2px solid transparent;
-  background-clip: content-box;
+  background: transparent;
+  border-radius: 6px;
+}
+:hover::-webkit-scrollbar-thumb {
+  background: rgba(38, 52, 52, 0.2);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(38, 52, 52, 0.3);
-  background-clip: content-box;
+  background: rgba(38, 52, 52, 0.36);
 }
 
 :focus-visible {

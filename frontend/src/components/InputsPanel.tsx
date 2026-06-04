@@ -1,14 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import type { Assumptions, ConfigResponse, Objective } from "../api/types";
-import { DEFAULT_OPEN, FIELD_GROUPS, type FieldDef, type FieldGroup } from "./fieldGroups";
+import { DEFAULT_OPEN, FIELD_GROUPS, OPTIMISABLE, type FieldDef, type FieldGroup } from "./fieldGroups";
 import { ScrubField } from "./ScrubField";
 import { Tooltip } from "./Tooltip";
 
-const OBJECTIVES: { id: Objective; label: string }[] = [
-  { id: "min_lcoe", label: "MIN LCoE" },
-  { id: "min_capex", label: "MIN CAPEX" },
-  { id: "max_capacity", label: "MAX CAP" },
+const OBJECTIVES: { id: Objective; label: string; hint: string }[] = [
+  { id: "min_lcoe", label: "MIN LCoE", hint: "Lowest levelised cost (€/GJ) — the deciding metric." },
+  { id: "min_capex", label: "MIN CAPEX", hint: "Lowest upfront capital (M€), ties broken by LCoE." },
+  {
+    id: "max_capacity",
+    label: "MAX CAP",
+    hint: "Most heating capacity within your Max CAPEX / Max LCoE caps.",
+  },
 ];
 
 export interface SearchState {
@@ -25,6 +29,7 @@ interface InputsPanelProps {
   search: SearchState;
   onSearch: (next: SearchState) => void;
   onExport: () => void;
+  onImport: (file: File) => void;
 }
 
 const prettify = (name: string): string =>
@@ -34,7 +39,8 @@ interface ParamRowProps {
   field: FieldDef;
   value: number;
   description?: string;
-  optimize: boolean;
+  /** Whether this field may be ranged (a design lever) when in optimize mode. */
+  rangeable: boolean;
   range?: [number, number];
   onValue: (v: number) => void;
   onToggleRange: () => void;
@@ -45,7 +51,7 @@ function ParamRow({
   field,
   value,
   description,
-  optimize,
+  rangeable,
   range,
   onValue,
   onToggleRange,
@@ -65,7 +71,18 @@ function ParamRow({
     <div className="prow">
       <div className="pk">{label}</div>
       <div className="pctl">
-        {optimize && range ? (
+        {rangeable && (
+          <Tooltip label={range ? "Fix to a single value" : "Search this as a range"}>
+            <button
+              type="button"
+              className={range ? "rng-toggle is-on" : "rng-toggle"}
+              onClick={onToggleRange}
+            >
+              {range ? "↔" : "FIX"}
+            </button>
+          </Tooltip>
+        )}
+        {rangeable && range ? (
           <div className="prange">
             <input
               type="number"
@@ -91,17 +108,6 @@ function ParamRow({
             onChange={onValue}
           />
         )}
-        {optimize && (
-          <Tooltip label={range ? "Fix to a single value" : "Search this as a range"}>
-            <button
-              type="button"
-              className={range ? "rng-toggle is-on" : "rng-toggle"}
-              onClick={onToggleRange}
-            >
-              {range ? "↔" : "FIX"}
-            </button>
-          </Tooltip>
-        )}
       </div>
     </div>
   );
@@ -115,8 +121,10 @@ export function InputsPanel({
   search,
   onSearch,
   onExport,
+  onImport,
 }: InputsPanelProps) {
   const [filter, setFilter] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(
     () => new Set(FIELD_GROUPS.map((g) => g.title).filter((t) => !DEFAULT_OPEN.includes(t))),
   );
@@ -178,15 +186,169 @@ export function InputsPanel({
   return (
     <div className="params">
       <div className="params-head">
-        <span className="label">Parameters · {q ? `${shown}/${total}` : total}</span>
-        <input
-          className="param-filter"
-          type="search"
-          placeholder="filter parameters…"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
+        <div className="params-title">
+          <span className="label">Parameters · {q ? `${shown}/${total}` : total}</span>
+          {mode === "optimize" && (
+            <Tooltip
+              side="bottom"
+              label={
+                <>
+                  Only <strong>design levers</strong> can be ranged (↔):{" "}
+                  <strong>injection temperature</strong> and <strong>free-cooling capacity</strong>.
+                  Prices, costs &amp; demand stay fixed — their uncertainty is shown by the
+                  Monte-Carlo &amp; tornado.
+                </>
+              }
+            >
+              <button type="button" className="info-q" aria-label="What can be optimised?">
+                ?
+              </button>
+            </Tooltip>
+          )}
+        </div>
+        <div className="params-search">
+          <input
+            className="param-filter"
+            type="search"
+            placeholder="filter parameters…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".toml,text/plain"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onImport(f);
+              e.target.value = "";
+            }}
+          />
+          <Tooltip label="Import inputs.toml" side="bottom">
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => fileRef.current?.click()}
+              aria-label="Import inputs.toml"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M8 9.5V2.75" />
+                <path d="M4.75 6 8 2.75 11.25 6" />
+                <path d="M3 13.25h10" />
+              </svg>
+            </button>
+          </Tooltip>
+          <Tooltip label="Export inputs.toml" side="bottom">
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={onExport}
+              aria-label="Export inputs.toml"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M8 2.5V9.5" />
+                <path d="M4.75 6.5 8 9.75 11.25 6.5" />
+                <path d="M3 13.25h10" />
+              </svg>
+            </button>
+          </Tooltip>
+        </div>
       </div>
+
+      {mode === "optimize" && (
+        <div className="params-opt">
+          <div className="group-title">
+            <span className="label">Objective</span>
+          </div>
+          <div className="seg">
+            {OBJECTIVES.map((o) => (
+              <Tooltip key={o.id} side="top" label={o.hint}>
+                <button
+                  type="button"
+                  className={search.objective === o.id ? "active" : ""}
+                  onClick={() => onSearch({ ...search, objective: o.id })}
+                >
+                  {o.label}
+                </button>
+              </Tooltip>
+            ))}
+          </div>
+          <div className="group-title">
+            <span className="label">Constraints</span>
+          </div>
+          <div className="cons-row">
+            <div className="field">
+              <div className="field-row">
+                <Tooltip label="Reject designs whose total CAPEX exceeds this (M€). Blank = no cap." side="right">
+                  <span className="label has-tip" tabIndex={0}>
+                    Max CAPEX
+                  </span>
+                </Tooltip>
+                <span className="field-val">M€</span>
+              </div>
+              <input
+                type="number"
+                placeholder="unset"
+                value={search.constraints.max_capex_meur ?? ""}
+                onChange={(e) =>
+                  onSearch({
+                    ...search,
+                    constraints: {
+                      ...search.constraints,
+                      max_capex_meur: e.target.value ? Number(e.target.value) : undefined,
+                    },
+                  })
+                }
+              />
+            </div>
+            <div className="field">
+              <div className="field-row">
+                <Tooltip label="Reject designs whose LCoE exceeds this (€/GJ). Blank = no cap." side="right">
+                  <span className="label has-tip" tabIndex={0}>
+                    Max LCoE
+                  </span>
+                </Tooltip>
+                <span className="field-val">€/GJ</span>
+              </div>
+              <input
+                type="number"
+                placeholder="unset"
+                value={search.constraints.max_lcoe_eur_per_gj ?? ""}
+                onChange={(e) =>
+                  onSearch({
+                    ...search,
+                    constraints: {
+                      ...search.constraints,
+                      max_lcoe_eur_per_gj: e.target.value ? Number(e.target.value) : undefined,
+                    },
+                  })
+                }
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {groups.map((g) => {
         const fields = g.fields.filter(matches);
@@ -213,7 +375,7 @@ export function InputsPanel({
                   field={f}
                   value={values[f.name] ?? config.defaults[f.name] ?? 0}
                   description={descOf[f.name]}
-                  optimize={mode === "optimize"}
+                  rangeable={mode === "optimize" && OPTIMISABLE.has(f.name)}
                   range={search.ranges[f.name]}
                   onValue={(v) => onChange(f.name, v)}
                   onToggleRange={() => toggleRange(f.name)}
@@ -225,74 +387,6 @@ export function InputsPanel({
         );
       })}
 
-      {mode === "optimize" && (
-        <div className="params-opt">
-          <div className="group-title">
-            <span className="label">Constraints</span>
-          </div>
-          <div className="field">
-            <div className="field-row">
-              <span className="label">Max CAPEX</span>
-              <span className="field-val">M€</span>
-            </div>
-            <input
-              type="number"
-              placeholder="none"
-              value={search.constraints.max_capex_meur ?? ""}
-              onChange={(e) =>
-                onSearch({
-                  ...search,
-                  constraints: {
-                    ...search.constraints,
-                    max_capex_meur: e.target.value ? Number(e.target.value) : undefined,
-                  },
-                })
-              }
-            />
-          </div>
-          <div className="field">
-            <div className="field-row">
-              <span className="label">Max LCoE</span>
-              <span className="field-val">€/GJ</span>
-            </div>
-            <input
-              type="number"
-              placeholder="none"
-              value={search.constraints.max_lcoe_eur_per_gj ?? ""}
-              onChange={(e) =>
-                onSearch({
-                  ...search,
-                  constraints: {
-                    ...search.constraints,
-                    max_lcoe_eur_per_gj: e.target.value ? Number(e.target.value) : undefined,
-                  },
-                })
-              }
-            />
-          </div>
-          <div className="group-title">
-            <span className="label">Objective</span>
-          </div>
-          <div className="seg">
-            {OBJECTIVES.map((o) => (
-              <button
-                key={o.id}
-                type="button"
-                className={search.objective === o.id ? "active" : ""}
-                onClick={() => onSearch({ ...search, objective: o.id })}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="params-foot">
-        <button className="btn" type="button" style={{ width: "100%" }} onClick={onExport}>
-          EXPORT inputs.toml
-        </button>
-      </div>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { Tooltip } from "./Tooltip";
+
 interface StatusBarProps {
   mode: "single" | "optimize";
   onMode: (m: "single" | "optimize") => void;
@@ -19,21 +21,42 @@ export function StatusBar({ mode, onMode, onRun, busy, status }: StatusBarProps)
       </div>
 
       <div className="sb-controls">
-        <div className="seg" role="group" aria-label="Run mode">
-          <button
-            type="button"
-            className={mode === "single" ? "active" : ""}
-            onClick={() => onMode("single")}
+        <div className="seg-help">
+          <div className="seg" role="group" aria-label="Run mode">
+            <button
+              type="button"
+              className={mode === "single" ? "active" : ""}
+              onClick={() => onMode("single")}
+            >
+              EVALUATE
+            </button>
+            <button
+              type="button"
+              className={mode === "optimize" ? "active" : ""}
+              onClick={() => onMode("optimize")}
+            >
+              OPTIMISE
+            </button>
+          </div>
+          <Tooltip
+            side="bottom"
+            label={
+              <>
+                <strong>Evaluate</strong> — design &amp; LCoE for your exact inputs.
+                <br />
+                <strong>Optimise</strong> — search the parameters you mark as ranges for the
+                least-cost design.
+              </>
+            }
           >
-            EVALUATE
-          </button>
-          <button
-            type="button"
-            className={mode === "optimize" ? "active" : ""}
-            onClick={() => onMode("optimize")}
-          >
-            OPTIMISE
-          </button>
+            <button
+              type="button"
+              className="help-badge"
+              aria-label="What do Evaluate and Optimise mean?"
+            >
+              ?
+            </button>
+          </Tooltip>
         </div>
 
         <div className="status-area">
