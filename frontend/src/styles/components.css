@@ -41,15 +41,56 @@
   .col-8, .col-7, .col-6, .col-5, .col-4 { grid-column: span 12; }
 }
 
-/* ---- Status bar ---- */
+/* ---- Status / nav bar ---- */
 .statusbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "brand controls run";
   align-items: center;
   gap: var(--s4);
   height: 56px;
   padding: 0 var(--s4);
-  border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel-hi), var(--panel-2));
+  background: var(--panel);
+  border-bottom: 1px solid var(--line-strong);
+}
+.sb-brand {
+  grid-area: brand;
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  min-width: 0;
+}
+.sb-controls {
+  grid-area: controls;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s4);
+  min-width: 0;
+}
+.sb-run { grid-area: run; }
+.sb-subtitle { white-space: nowrap; letter-spacing: 0.04em; color: var(--text-dim); }
+.status-area { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.sb-status {
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .statusbar {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand run"
+      "controls controls";
+    height: auto;
+    padding: 10px var(--s3);
+    gap: 10px var(--s3);
+  }
+  .sb-subtitle { display: none; }
+  .sb-controls { justify-content: space-between; }
 }
 .brand {
   font-family: var(--font-mono);
