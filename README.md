@@ -1,51 +1,137 @@
-# Geothermal Datathon 2026 — Utrecht Heating & Cooling
+# Geothermal Datathon 2026: Utrecht Heating and Cooling
 
-Solution for the **SPE Africa Geothermal Datathon 2026**: assess the Rotliegend
-(Slochteren) geothermal resource near Utrecht (NL) and design a **least-cost
-integrated district heating + cooling system** delivering **≥10 MWth heating** and
-**≥5 MWth cooling**.
+This repository is our entry for the SPE Africa Geothermal Datathon 2026. The task is
+to assess the Rotliegend (Slochteren) geothermal resource near Utrecht in the
+Netherlands and design a district energy system that delivers at least 10 MWth of
+heating and at least 5 MWth of cooling.
 
-> Winning thesis: not maximum megawatts, but the **lowest, most credible LCoE** at
-> adequate capacity — with a correct data foundation, a sited well program, a
-> heating+cooling design where cooling monetises otherwise-idle summer capacity,
-> and a reproducible, agent-driven workflow.
+The judging metric is the levelized cost of energy (LCoE), not raw capacity. So the
+whole solution is built to find the lowest credible cost at adequate capacity rather
+than the largest system. The recommended design is a staged single-doublet scheme
+(one geothermal doublet, a central heat pump, seasonal HT-ATES storage, and
+heat-driven cooling) that meets the demand at about 20.9 EUR/GJ. Doing cooling as well
+as heating pushes geothermal utilisation from 59% to 99%, which is the main reason the
+cost comes out low.
+
+The codebase does three things:
+
+1. Runs the full analysis pipeline (data cleaning, resource assessment, system design,
+   techno-economics) from one typed configuration.
+2. Exposes that pipeline as a command-line tool and as a FastAPI backend.
+3. Ships a React demo app that drives the backend so you can evaluate a design or
+   search for the least-cost one interactively.
 
 ## Pipeline
 
 | Stage | Module | What it produces |
-|------|--------|------------------|
-| ① Data foundation | `geothermal.petrophysics` | TVD-correct, gap-filled reservoir dataset |
-| ② Resource (Ch.1) | `geothermal.resource` | P10/50/90 power per well + spatial map + well siting |
-| ③ System design (Ch.2A) | `geothermal.design` | geothermal + heat pump + HT-ATES + cooling |
-| ④ Techno-economics (Ch.2B) | `geothermal.economics` | LCoE optimisation + Monte-Carlo bands |
-| ⑤ Agentic workflow (bonus) | `geothermal.agent` | orchestrates ①–④, narrates decisions |
-| ⑥ Demo app | `app/` (FastAPI + React) | interactive walkthrough |
+|-------|--------|------------------|
+| 1. Data foundation | `geothermal.petrophysics` | TVD-correct, gap-filled reservoir dataset |
+| 2. Resource (Ch.1) | `geothermal.resource` | P10/50/90 power per well, spatial map, well siting |
+| 3. System design (Ch.2A) | `geothermal.design` | geothermal + heat pump + HT-ATES + cooling |
+| 4. Techno-economics (Ch.2B) | `geothermal.economics` | LCoE optimisation and Monte-Carlo bands |
+| 5. Agentic workflow (bonus) | `geothermal.agent` | orchestrates stages 1 to 4 and records its decisions |
+| 6. Demo app | `geothermal.api` + `frontend/` | interactive walkthrough (FastAPI + React) |
 
-## Data quirks handled (see `tests/test_loaders.py`)
+Everything is driven by one frozen `Assumptions` config (`geothermal.assumptions`), so a
+judge can reproduce every number offline with no API key.
 
-- `target_lithologies.csv` depths are **along-hole** despite `_tvd` names; `depth_tvd_m`
-  is empty → reconciled via the directional surveys (minimum curvature).
-- **JUT-01 LAS** carries feet *and* metre depth channels → normalised to metres.
-- **ThermoGIS** `BLT-01` sheet mislabels its inner *Well Name* cell as `PKP-01`
-  → keyed by sheet name + coordinates instead.
+## Data quirks handled
+
+These are the traps in the provided data that the loaders correct (see
+`tests/test_loaders.py`):
+
+- `target_lithologies.csv` stores along-hole depths even though the columns are named
+  `_tvd`, and the `depth_tvd_m` column is empty. True vertical depth is reconstructed
+  from the directional surveys using minimum curvature.
+- The JUT-01 LAS file carries both feet and metre depth channels. These are normalised
+  to metres.
+- The ThermoGIS `BLT-01` sheet mislabels its inner *Well Name* cell as `PKP-01`, so the
+  loader keys wells by sheet name and coordinates instead of that cell.
 
 ## Setup
 
+The project uses [uv](https://docs.astral.sh/uv/) for Python and
+[pnpm](https://pnpm.io/) for the frontend.
+
 ```bash
-uv sync --all-extras        # create .venv and install deps (incl. notebooks)
-uv run pytest               # run tests
+uv sync --all-extras        # create .venv and install Python deps (incl. web, llm, notebooks)
+uv run pytest               # run the test suite
 uv run ruff check .         # lint
-uv run ruff format .        # format
 uv run pyright              # type-check
 ```
+
+## Using it from the command line
+
+The CLI is `geo-datathon`. It runs the whole pipeline from a small TOML file and needs
+no API key. Start by writing a template you can edit:
+
+```bash
+uv run geo-datathon template --out inputs.toml
+```
+
+Then run the analysis. With no `--input`, it uses the documented default assumptions
+(the recommended design):
+
+```bash
+uv run geo-datathon report                       # print the technical report to stdout
+uv run geo-datathon report --out report.md       # or write it to a file
+uv run geo-datathon report --input inputs.toml   # use your edited assumptions
+```
+
+If your TOML file defines search ranges and constraints, the report command optimises
+over them and reports the least-cost design that satisfies the constraints.
+
+To run the agentic workflow instead, which executes the same pipeline while recording a
+decision log of what it chose and why:
+
+```bash
+uv run geo-datathon workflow
+uv run geo-datathon workflow --input inputs.toml
+```
+
+`inputs.example.toml` shows the full input format, including the search block.
+
+## Using it from the browser
+
+For a quick look, build the frontend once and let the backend serve it. This is a
+single process: no separate frontend server.
+
+```bash
+cd frontend && pnpm install && pnpm build && cd ..
+uv run uvicorn geothermal.api:app --port 8000
+```
+
+Then open `http://localhost:8000`. The backend serves the built UI from `frontend/dist`
+and the API from the same origin. Rebuild (`pnpm build`) whenever the frontend changes.
+
+If you are working on the frontend itself, run the Vite dev server for hot reload
+instead. This needs two terminals, one for each process:
+
+```bash
+uv run uvicorn geothermal.api:app --reload --port 8000   # terminal 1: API
+cd frontend && pnpm dev                                  # terminal 2: UI
+```
+
+Open the URL Vite prints (usually `http://localhost:5173`). In dev the UI calls the API
+at `http://localhost:8000`; set `VITE_API_BASE` to point elsewhere if needed.
+
+The app has two modes:
+
+- **Evaluate** computes the design and LCoE for the exact inputs you set.
+- **Optimise** searches the parameters you mark as ranges and returns the least-cost
+  design within your constraints.
+
+You can import or export the same `inputs.toml` the CLI uses, so you can move a
+configuration between the two without retyping it.
 
 ## Layout
 
 ```
-src/geothermal/      # library code (io, petrophysics, resource, design, economics, agent)
+src/geothermal/      # library: io, petrophysics, resource, design, economics, agent, api
+frontend/            # React + Vite demo app (TypeScript)
 tests/               # pytest
 notebooks/           # runnable analysis notebooks (D1 deliverable)
-data/                # provided datasets (+ data/raw/*.las)
+data/                # provided datasets (plus data/raw/*.las)
 docs/                # challenge brief, FAQ, submission guidelines, design spec
-outputs/             # generated figures/tables (gitignored)
+outputs/             # generated figures and reports (gitignored, regenerated)
 ```

@@ -10,7 +10,10 @@ import type {
   WorkflowPayload,
 } from "./types";
 
-const BASE: string = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
+// In a production build the API is served same-origin (FastAPI hosts the built UI), so
+// default to relative URLs. In dev the Vite server and the API run on separate ports.
+const BASE: string =
+  import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "http://localhost:8000" : "");
 
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
