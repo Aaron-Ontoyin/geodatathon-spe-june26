@@ -21,6 +21,8 @@ from geothermal.report import build_report
 from geothermal.resource import locate_demand_center, recommend_new_well, well_power_percentiles
 
 _TOTAL_STAGES = 6
+_TVD_TOLERANCE_M = 1.0  # sub-metre AH→TVD reconstruction is the bar for trusting the depths
+_POROSITY_TOLERANCE_PCT = 5.0  # max acceptable gap to the independent ThermoGIS porosity
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,9 +72,7 @@ def run_workflow(
             name="Data foundation",
             action="Converted along-hole depths to TVD (minimum curvature) and imputed the "
             "missing porosity from the bulk-density log.",
-            decision=f"Trusted the conversion (reproduces the survey TVD to {tvd_residual:.2f} m) "
-            f"and the imputation (agrees with independent ThermoGIS within {max_mismatch:.1f} "
-            "porosity points), so the resource and cost stages use validated depths and porosity.",
+            decision=_data_foundation_decision(tvd_residual, max_mismatch),
             metrics={
                 "wells": float(n_wells),
                 "max_tvd_residual_m": tvd_residual,
@@ -159,3 +159,31 @@ def run_workflow(
         lcoe_eur_per_gj=best.lcoe_eur_per_gj,
         n_doublets=best.n_doublets,
     )
+
+
+def _data_foundation_decision(tvd_residual: float, max_mismatch: float) -> str:
+    """Phrase the data-foundation verdict from the actual numbers, not a fixed conclusion.
+
+    Each check reads as a pass or a fail against its tolerance, and the closing verdict
+    flips to a flag if either check is out of bounds, so the narration stays true if the
+    inputs change.
+    """
+    tvd_ok = tvd_residual <= _TVD_TOLERANCE_M
+    poro_ok = max_mismatch <= _POROSITY_TOLERANCE_PCT
+    conversion = (
+        f"the conversion reproduces the survey TVD to {tvd_residual:.2f} m"
+        if tvd_ok
+        else f"the conversion leaves a {tvd_residual:.2f} m gap to the survey TVD"
+    )
+    imputation = (
+        f"the imputation agrees with independent ThermoGIS to {max_mismatch:.1f} porosity points"
+        if poro_ok
+        else f"the imputation differs from independent ThermoGIS by {max_mismatch:.1f} porosity "
+        "points"
+    )
+    verdict = (
+        "both clear their tolerances, so the resource and cost stages run on these values"
+        if tvd_ok and poro_ok
+        else "a check is outside tolerance, so these values are flagged before downstream use"
+    )
+    return f"Checked that {conversion} and {imputation}; {verdict}."

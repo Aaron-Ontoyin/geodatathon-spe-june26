@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from geothermal.agent import narrate, run_workflow
+from geothermal.agent.workflow import _data_foundation_decision
 
 
 def test_workflow_runs_all_pipeline_stages() -> None:
@@ -45,6 +46,20 @@ def test_deterministic_narration_needs_no_key() -> None:
     text = narrate(result, use_llm=False)
     assert len(text) > 500
     assert "lcoe" in text.lower()
+
+
+def test_data_foundation_decision_passes_within_tolerance() -> None:
+    text = _data_foundation_decision(0.01, 2.7)
+    assert "reproduces the survey TVD" in text
+    assert "agrees with independent ThermoGIS" in text
+    assert "run on these values" in text
+
+
+def test_data_foundation_decision_flags_when_out_of_tolerance() -> None:
+    text = _data_foundation_decision(3.4, 7.1)
+    assert "gap to the survey TVD" in text
+    assert "differs from independent ThermoGIS" in text
+    assert "flagged before downstream use" in text
 
 
 def test_llm_narration_falls_back_gracefully_without_key(
