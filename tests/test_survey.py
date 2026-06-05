@@ -10,7 +10,11 @@ import numpy as np
 import pytest
 
 from geothermal.io import load_well_paths
-from geothermal.petrophysics.survey import DeviationSurvey, minimum_curvature
+from geothermal.petrophysics.survey import (
+    DeviationSurvey,
+    minimum_curvature,
+    survey_tvd_residual_m,
+)
 
 
 def test_vertical_well_tvd_equals_md() -> None:
@@ -55,6 +59,12 @@ def test_reproduces_provided_tvd(wid: str) -> None:
     )
     provided = df["tvd_m"].to_numpy()
     assert np.nanmax(np.abs(path.tvd - provided)) < 1.0
+
+
+def test_survey_tvd_residual_is_subdecimetre() -> None:
+    # The depth conversion reproduces the provider's TVD to within a few centimetres
+    # across all wells, so the reported accuracy is derived from data, not asserted.
+    assert survey_tvd_residual_m() < 0.1
 
 
 def test_tvd_never_exceeds_md_and_is_monotone() -> None:

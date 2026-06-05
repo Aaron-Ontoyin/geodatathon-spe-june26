@@ -18,7 +18,12 @@ from geothermal.petrophysics.reservoir import (
     build_well_reservoir,
     infer_orientation,
 )
-from geothermal.petrophysics.survey import DeviationSurvey, SurveyPath, minimum_curvature
+from geothermal.petrophysics.survey import (
+    DeviationSurvey,
+    SurveyPath,
+    minimum_curvature,
+    survey_tvd_residual_m,
+)
 
 __all__ = [
     "DeviationSurvey",
@@ -33,4 +38,5 @@ __all__ = [
     "minimum_curvature",
     "porosity_cross_well_skill",
     "porosity_log_quality",
+    "survey_tvd_residual_m",
 ]

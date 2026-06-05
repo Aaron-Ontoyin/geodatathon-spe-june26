@@ -14,9 +14,12 @@ import numpy.typing as npt
 import pandas as pd
 from scipy.interpolate import PchipInterpolator
 
+from geothermal.io import load_well_paths
+
 FloatArray = npt.NDArray[np.float64]
 
 _VERTICAL_DOGLEG_RAD = 1e-10  # below this the ratio factor is 1 (straight segment)
+_SURVEY_TVD_COLUMNS = ["md_m", "inclination_deg", "azimuth_deg", "tvd_m"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,3 +101,28 @@ class DeviationSurvey:
         query = np.asarray(md_query, dtype=float)
         interpolated = np.asarray(self._interp(query), dtype=float)
         return np.where(query <= self.first_station_md, query, interpolated)
+
+
+def survey_tvd_residual_m(surveys: dict[str, pd.DataFrame] | None = None) -> float:
+    """Largest gap (metres) between our reconstructed TVD and the provider's survey TVD.
+
+    Reconstructs TVD from each well's (MD, inclination, azimuth) by minimum curvature
+    and compares it to the provider's own ``tvd_m`` column at every survey station. The
+    maximum absolute difference is the headline accuracy of the depth conversion.
+    """
+    paths = load_well_paths() if surveys is None else surveys
+    diffs = [
+        np.abs(
+            minimum_curvature(
+                clean["md_m"].to_numpy(),
+                clean["inclination_deg"].to_numpy(),
+                clean["azimuth_deg"].to_numpy(),
+            ).tvd
+            - clean["tvd_m"].to_numpy(dtype=float)
+        )
+        for df in paths.values()
+        if len(clean := df.dropna(subset=_SURVEY_TVD_COLUMNS)) >= 2
+    ]
+    if not diffs:
+        raise ValueError("no survey stations carry both reconstructed and provider TVD")
+    return float(np.concatenate(diffs).max())

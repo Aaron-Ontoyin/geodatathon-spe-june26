@@ -15,7 +15,7 @@ from geothermal.assumptions import DEFAULT_ASSUMPTIONS, Assumptions
 from geothermal.datasets import clean_reservoir_dataset
 from geothermal.design import district_demand, simulate
 from geothermal.economics.optimization import design_for, evaluate_candidate, lcoe_monte_carlo
-from geothermal.petrophysics import imputed_vs_thermogis
+from geothermal.petrophysics import imputed_vs_thermogis, survey_tvd_residual_m
 from geothermal.progress import Progress, ProgressCallback, report
 from geothermal.report import build_report
 from geothermal.resource import locate_demand_center, recommend_new_well, well_power_percentiles
@@ -60,24 +60,28 @@ def run_workflow(
         )
 
     _emit("Cleaning and validating well data")
-    # 1 — Data foundation
     check = imputed_vs_thermogis(clean_reservoir_dataset())
+    n_wells = len(check)
     imputed = check[check["source"] == "imputed"]
     max_mismatch = float(np.abs(np.asarray(imputed["difference"], dtype=float)).max())
+    tvd_residual = survey_tvd_residual_m()
     steps.append(
         WorkflowStep(
             name="Data foundation",
             action="Converted along-hole depths to TVD (minimum curvature) and imputed the "
             "missing porosity from the bulk-density log.",
-            decision="Trusted the conversion (reproduces the survey TVD to <1 m) and the "
-            f"imputation (agrees with independent ThermoGIS within {max_mismatch:.1f} porosity "
-            "points), so downstream numbers rest on a clean foundation.",
-            metrics={"wells": 4.0, "max_porosity_mismatch_pct": max_mismatch},
+            decision=f"Trusted the conversion (reproduces the survey TVD to {tvd_residual:.2f} m) "
+            f"and the imputation (agrees with independent ThermoGIS within {max_mismatch:.1f} "
+            "porosity points), so the resource and cost stages use validated depths and porosity.",
+            metrics={
+                "wells": float(n_wells),
+                "max_tvd_residual_m": tvd_residual,
+                "max_porosity_mismatch_pct": max_mismatch,
+            },
         )
     )
 
     _emit("Assessing the geothermal resource")
-    # 2 — Resource assessment
     pct = well_power_percentiles()
     viable = [
         str(w)
@@ -88,14 +92,14 @@ def run_workflow(
         WorkflowStep(
             name="Resource assessment",
             action="Computed P90/P50/P10 doublet power per well from the calibrated model.",
-            decision=f"Only {len(viable)} of 4 wells are viable ({', '.join(viable)}); the given "
-            "wells alone cannot meet 10 MWth, so a new well must be sited.",
+            decision=f"Only {len(viable)} of {len(pct)} wells are viable "
+            f"({', '.join(viable)}); the given wells alone cannot meet 10 MWth, "
+            "so a new well must be sited.",
             metrics={"viable_wells": float(len(viable))},
         )
     )
 
     _emit("Siting a new well")
-    # 3 — Well siting
     usp_x, usp_y = locate_demand_center()
     rec = recommend_new_well(assumptions=a)
     steps.append(
@@ -114,7 +118,6 @@ def run_workflow(
     )
 
     _emit("Optimising the system design")
-    # 4 — System design & optimisation
     ranked = [evaluate_candidate(n, assumptions=a) for n in (1, 2, 3)]
     best = sorted((c for c in ranked if c.meets_demand), key=lambda c: c.lcoe_eur_per_gj)[0]
     perf = simulate(design_for(best.geo_capacity_mw, a), district_demand(assumptions=a))
@@ -135,7 +138,6 @@ def run_workflow(
     )
 
     _emit("Running the risk Monte-Carlo")
-    # 5 — Risk assessment
     band = lcoe_monte_carlo(best.n_doublets, assumptions=a, n_samples=mc_samples)
     steps.append(
         WorkflowStep(
