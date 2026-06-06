@@ -55,7 +55,15 @@ class Assumptions(BaseModel):
     )
 
     # --- CAPEX unit costs ---
-    well_cost_meur: float = Field(default=3.237, ge=0, description="Cost per well (M€).")
+    well_cost_meur: float = Field(
+        default=4.331,
+        ge=0,
+        description=(
+            "Cost per well (M€). The LCOE.xlsx well-cost formula (D12) evaluated at the "
+            "Utrecht Rotliegend depth (~2281 m), not the spreadsheet's 1800 m worked example "
+            "(which gives 3.237). See geothermal.economics.well_cost."
+        ),
+    )
     pump_cost_meur: float = Field(default=0.3, ge=0, description="Pump cost per doublet (M€).")
     heat_plant_keur_per_mwth: float = Field(
         default=150.0, ge=0, description="Surface heat plant (k€/MWth)."
@@ -82,7 +90,13 @@ class Assumptions(BaseModel):
         default=35.0, ge=0, description="Gas fuel price (€/MWhth)."
     )
     variable_om_eur_per_mwhth: float = Field(
-        default=5.556, ge=0, description="Variable O&M (€/MWhth)."
+        default=0.0,
+        ge=0,
+        description=(
+            "Other variable O&M (€/MWhth). Circulation-pump electricity (the provided "
+            "LCOE.xlsx variable O&M, = electricity_price / circulation_pump_cop) is modelled "
+            "explicitly in the electricity term, so it must not be duplicated here."
+        ),
     )
     fixed_om_rate: float = Field(
         default=0.01, ge=0, le=1, description="Fixed O&M as a fraction of CAPEX per year."

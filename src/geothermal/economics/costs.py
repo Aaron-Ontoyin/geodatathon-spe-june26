@@ -57,6 +57,9 @@ def evaluate_costs(
     capex_eur = capex_meur * 1.0e6
 
     thermal_mwh = (performance.heat_delivered_gj + performance.cool_delivered_gj) / GJ_PER_MWH
+    # Circulation-pump electricity = geothermal throughput / COP, charged at the electricity
+    # price. This IS the provided LCOE.xlsx "variable O&M" (defined there as price / COP), so
+    # it is counted here only, never also in variable_om_eur_per_mwhth (which would double it).
     circulation_mwh_e = (performance.geo_heat_gj / GJ_PER_MWH) / a.circulation_pump_cop
     electricity_mwh_e = (
         performance.heat_pump_mwh_e + performance.compression_mwh_e + circulation_mwh_e
