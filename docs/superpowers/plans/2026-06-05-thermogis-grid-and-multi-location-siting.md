@@ -17,7 +17,7 @@
 ## File Structure
 
 - Create `src/geothermal/resource/thermogis_grid.py` — NetCDF loader: open a property grid, crop to a box, look up nearest cell at (x, y).
-- Create `src/geothermal/resource/properties.py` — `SiteProperties` + `grid_properties_at` / `measured_properties_at` providers.
+- Create `src/geothermal/resource/properties.py` — `SiteProperties` + `grid_properties_at` provider + `nearest_well_km`.
 - Create `src/geothermal/resource/siting.py` — AOI box, candidate lattice ∪ wells, viability filter, shortlist.
 - Create `src/geothermal/economics/well_cost.py` — depth-dependent well CAPEX.
 - Create `src/geothermal/economics/program_search.py` — multi-location doublet-program search + per-well Monte-Carlo.
