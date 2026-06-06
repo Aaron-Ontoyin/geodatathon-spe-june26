@@ -61,7 +61,7 @@ _ROOT = Path(os.environ.get("GEO_THERMOGIS_ROOT", "data/thermogis_grid"))
     not grid_path(_ROOT, scenario="heat_pump", prop="power_p50").exists(),
     reason="ThermoGIS grid not present",
 )
-def test_shortlist_from_grid_returns_viable_sites() -> None:
-    sites = siting.shortlist_from_grid(_ROOT, assumptions=DEFAULT_ASSUMPTIONS)
+def test_candidates_from_grid_returns_viable_sites() -> None:
+    sites = siting.candidates_from_grid(_ROOT, assumptions=DEFAULT_ASSUMPTIONS)
     assert sites, "expected at least one viable candidate in the AOI"
     assert all(s.power_mw_p50 >= DEFAULT_ASSUMPTIONS.viability_floor_mw for s in sites)

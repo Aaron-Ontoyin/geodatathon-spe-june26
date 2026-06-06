@@ -69,17 +69,24 @@ def evaluate_program(
 
 
 def search_program(
-    shortlist: list[SiteProperties],
+    candidates: list[SiteProperties],
     *,
     assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
     min_spacing_km: float,
 ) -> Program | None:
     """Exhaustively search programs of size 1..N for the least-LCoE feasible one.
 
-    Stops growing k once the best feasible LCoE at size k is no better than at k-1
-    (LCoE is U-shaped in doublet count). Returns None if nothing is feasible.
+    The candidate pool is first ranked by each site's own single-doublet LCoE (depth and
+    transmission included) and trimmed to ``assumptions.shortlist_size`` — an LCoE-aware
+    shortlist, so the cheapest sites (not merely the highest-power ones) enter the
+    combinatorial search. Stops growing k once the best feasible LCoE at size k is no
+    better than at k-1 (LCoE is U-shaped in doublet count). Returns None if nothing is
+    feasible.
     """
     min_spacing_m = min_spacing_km * 1000.0
+    shortlist = sorted(
+        candidates, key=lambda s: evaluate_program([s], assumptions=assumptions).lcoe_eur_per_gj
+    )[: assumptions.shortlist_size]
     best: Program | None = None
     best_at_prev = float("inf")
     for k in range(1, min(len(shortlist), assumptions.max_program_doublets) + 1):

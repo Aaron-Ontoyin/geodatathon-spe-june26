@@ -67,13 +67,17 @@ def shortlist(sites: list[SiteProperties], *, size: int) -> list[SiteProperties]
     return sorted(sites, key=lambda s: s.power_mw_p50, reverse=True)[:size]
 
 
-def shortlist_from_grid(
+def candidates_from_grid(
     root: Path,
     *,
     assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
     scenario: Scenario = "heat_pump",
 ) -> list[SiteProperties]:
-    """Full grid-backed candidate pipeline: lattice -> properties -> filter -> shortlist."""
+    """All viable candidate sites in the AOI from the grid (lattice + wells, viability-filtered).
+
+    Returns the full viable pool; the LCoE-aware shortlisting happens in
+    ``geothermal.economics.program_search.search_program``, so siting stays free of economics.
+    """
     a = assumptions
     pts = candidate_lattice(
         center=a.aoi_center_rd, size_km=a.aoi_size_km, pitch_km=a.min_well_spacing_km
@@ -90,5 +94,4 @@ def shortlist_from_grid(
             sigma_interp_per_km=a.sigma_interp_per_km,
         )
 
-    sites = build_candidates(pts, provider=provider, viability_floor_mw=a.viability_floor_mw)
-    return shortlist(sites, size=a.shortlist_size)
+    return build_candidates(pts, provider=provider, viability_floor_mw=a.viability_floor_mw)

@@ -22,7 +22,7 @@ from geothermal.petrophysics import imputed_vs_thermogis, survey_tvd_residual_m
 from geothermal.progress import Progress, ProgressCallback, report
 from geothermal.report import build_report
 from geothermal.resource import locate_demand_center, recommend_new_well, well_power_percentiles
-from geothermal.resource.siting import shortlist_from_grid
+from geothermal.resource.siting import candidates_from_grid
 
 _TOTAL_STAGES = 7  # data, resource, siting, design, grid-confirmation, risk, report
 _TVD_TOLERANCE_M = 1.0  # sub-metre AH→TVD reconstruction is the bar for trusting the depths
@@ -149,22 +149,22 @@ def run_workflow(
     grid_root = Path(os.environ.get("GEO_THERMOGIS_ROOT", "data/thermogis_grid"))
     if (grid_root / "6_Permian").exists():
         _emit("Confirming with a grid-based multi-location search")
-        shortlist = shortlist_from_grid(grid_root, assumptions=a)
-        program = search_program(shortlist, assumptions=a, min_spacing_km=a.min_well_spacing_km)
+        candidates = candidates_from_grid(grid_root, assumptions=a)
+        program = search_program(candidates, assumptions=a, min_spacing_km=a.min_well_spacing_km)
         if program is not None:
             verdict = "agrees with" if program.n_doublets == best.n_doublets else "differs from"
             steps.append(
                 WorkflowStep(
                     name="Independent siting check",
-                    action=f"Ran an unbiased multi-location search over {len(shortlist)} candidate "
-                    "sites from the ThermoGIS regional grid (each cell and existing well equal; "
-                    "per-site depth and transmission costed).",
+                    action=f"Ran an unbiased multi-location search over {len(candidates)} "
+                    "candidate sites from the ThermoGIS regional grid (each cell and existing "
+                    "well equal; per-site depth and transmission costed).",
                     decision=f"The grid search lands on {program.n_doublets} doublet(s), which "
                     f"{verdict} the {best.n_doublets}-doublet recommendation, so the count is "
                     "robust to the siting method (its grid LCoE is higher as it also charges "
                     "per-site transmission and the deeper-cell drilling cost).",
                     metrics={
-                        "grid_candidate_sites": float(len(shortlist)),
+                        "grid_candidate_sites": float(len(candidates)),
                         "grid_n_doublets": float(program.n_doublets),
                         "grid_lcoe_eur_per_gj": program.lcoe_eur_per_gj,
                     },
