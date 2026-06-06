@@ -282,12 +282,20 @@ our differentiator. All thresholds are config inputs.
 A careful review of the implementation plan corrected four points; this section supersedes
 the corresponding text above.
 
-- **4.5 well CAPEX — anchor on the provided LCOE.xlsx, not ThermoGIS absolutes.** The depth
-  term is `well_cost_meur * poly(d)/poly(d_ref)`: the provided per-well cost is reproduced
-  at the reference depth and only its *shape* varies with depth. Adopting ThermoGIS's
-  absolute coefficients (~7.4 vs the provided 3.24 M€/well) would inflate LCoE ~2.3x on the
-  wells term and break consistency with the cost model the organizers supplied. Per-site
-  well costs are summed (each site at its own depth), not averaged.
+- **4.5 well CAPEX — use the LCOE.xlsx formula directly.** A correctness pass found the
+  provided spreadsheet has its OWN well-cost formula (cell D12:
+  `1.5*(0.2*d^2 + 700*d + 250000)*1e-6`, d = along-hole depth), which differs from
+  ThermoGIS's. We port the spreadsheet's (now in `geothermal.economics.well_cost`, validated
+  to reproduce its 3.237 M€ at 1800 m). The old flat 3.237 default was the spreadsheet's
+  1800 m example and under-costs our ~2281 m wells; corrected to 4.331 M€ (formula at the
+  Utrecht depth). The multi-site search costs each site at its own grid depth
+  (`depth_m * curvature`); per-site well costs are summed, not averaged.
+- **Two further LCoE bugs were fixed in the existing code during this pass** (not just the
+  plan): a circulation-pump electricity **double-count** (the spreadsheet's variable O&M IS
+  the pumping cost, which we also modelled explicitly), and confirmation that the **9.3%
+  single-rate LCoE is mathematically equivalent** to the spreadsheet's levered DCF across the
+  design space (so no DCF port is needed). Net headline change was small (20.9 -> 20.85
+  €/GJ) and 1 doublet still wins, the recommendation is robust.
 - **4.6 base sigma is a config input** (`base_sigma_log_trans`, default ~1.5 from the wells'
   P10/P90 bands), not a hardcoded constant. The measured tier needs no separate provider:
   the interpolation term is zero at a well, so well cells get the narrow base band directly.
