@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from geothermal.assumptions import DEFAULT_ASSUMPTIONS
-from geothermal.economics.program_search import evaluate_program, search_program
+from geothermal.economics.program_search import (
+    evaluate_program,
+    program_monte_carlo,
+    search_program,
+)
 from geothermal.resource.properties import SiteProperties
 
 
@@ -42,3 +46,20 @@ def test_search_finds_least_lcoe_feasible_program() -> None:
     assert best is not None
     assert best.meets_demand
     assert best.n_doublets <= len(sites)
+
+
+def test_independent_draws_produce_ordered_band() -> None:
+    a = DEFAULT_ASSUMPTIONS
+    sites = [
+        SiteProperties(
+            x=0.0, y=0.0, transmissivity_dm=6.0, temperature_c=77.0,
+            power_mw_p50=6.0, depth_m=2200.0, sigma_log_trans=0.9, source="thermogis_grid",
+        ),
+        SiteProperties(
+            x=3000.0, y=0.0, transmissivity_dm=6.0, temperature_c=77.0,
+            power_mw_p50=6.0, depth_m=2200.0, sigma_log_trans=0.9, source="thermogis_grid",
+        ),
+    ]
+    band = program_monte_carlo(sites, assumptions=a, n_samples=400, seed=1)
+    assert band["p10"] <= band["p50"] <= band["p90"]
+    assert band["p90"] - band["p10"] >= 0
