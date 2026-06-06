@@ -86,10 +86,9 @@ def test_new_siting_and_cost_fields_have_documented_defaults() -> None:
     assert a.aoi_size_km == 20.0
     assert a.viability_floor_mw > 0
     assert a.well_capex_a == 375000.0
-    assert a.well_capex_b == 1150.0
-    assert a.well_capex_c == 0.3
-    assert a.well_capex_factor == 1.5
+    assert a.well_ref_depth_m == 2200.0
     assert a.well_curvature_factor == 1.1
+    assert a.base_sigma_log_trans > 0
     assert a.sigma_interp_per_km >= 0
     assert a.shortlist_size >= 4
 ```
@@ -113,23 +112,30 @@ aoi_size_km: float = Field(default=20.0, gt=0, description="Side length of the s
 viability_floor_mw: float = Field(
     default=2.0, ge=0, description="Minimum ThermoGIS doublet power (MW) for a cell to be a candidate site."
 )
-shortlist_size: int = Field(default=30, ge=4, description="Number of strongest candidate cells kept for the program search.")
-max_program_doublets: int = Field(default=6, ge=1, description="Backstop cap on doublets in a program (objective normally stops sooner).")
+shortlist_size: int = Field(default=12, ge=4, description="Strongest candidate cells kept for the EXHAUSTIVE program search (bounds the combinatorics).")
+max_program_doublets: int = Field(default=4, ge=1, description="Backstop cap on doublets in a program (objective normally stops sooner).")
 
-# --- Depth-dependent well CAPEX (ThermoGIS/DoubletCalc-aligned) ---
-well_capex_a: float = Field(default=375000.0, ge=0, description="Well CAPEX constant term (EUR).")
-well_capex_b: float = Field(default=1150.0, ge=0, description="Well CAPEX linear coefficient (EUR per m along-hole).")
-well_capex_c: float = Field(default=0.3, ge=0, description="Well CAPEX quadratic coefficient (EUR per m^2).")
-well_capex_factor: float = Field(default=1.5, gt=0, description="Multiplier on the well CAPEX polynomial.")
+# --- Depth-dependent well CAPEX: ThermoGIS depth SHAPE, calibrated to the provided LCOE.xlsx cost ---
+# well CAPEX(d) = well_cost_meur * poly(d)/poly(d_ref); poly(d)=a + b*d + c*d^2; d = TVD * curvature.
+# Anchors on the provided per-well cost at the reference depth, varies only its SHAPE with depth.
+# This keeps consistency with the provided LCOE.xlsx (do NOT adopt ThermoGIS's absolute coefficients,
+# which give ~7.4 M€/well vs the provided 3.24 M€/well and would inflate LCoE ~2.3x on the wells term).
+well_capex_a: float = Field(default=375000.0, ge=0, description="Well CAPEX shape constant term (relative).")
+well_capex_b: float = Field(default=1150.0, ge=0, description="Well CAPEX shape linear coefficient (relative).")
+well_capex_c: float = Field(default=0.3, ge=0, description="Well CAPEX shape quadratic coefficient (relative).")
+well_ref_depth_m: float = Field(default=2200.0, gt=0, description="Reference reservoir TVD where well CAPEX == well_cost_meur.")
 well_curvature_factor: float = Field(default=1.1, ge=1, description="Along-hole/TVD ratio for deviated wells.")
 
-# --- Per-site interpolation uncertainty (modelled; P50-only grid) ---
+# --- Per-site transmissivity uncertainty (modelled; the bulk grid is P50-only) ---
+base_sigma_log_trans: float = Field(
+    default=1.5, ge=0, description="Base log-transmissivity spread, from the 4 wells' P10/P90 bands (~1.5)."
+)
 sigma_interp_per_km: float = Field(
-    default=0.03, ge=0, description="Growth of log-transmissivity uncertainty per km from the nearest logged well."
+    default=0.03, ge=0, description="Extra log-transmissivity uncertainty per km from the nearest logged well."
 )
 ```
 
-Keep `well_cost_meur` for now (still referenced); a later task switches `costs.py` to the depth formula.
+Keep `well_cost_meur` (it is the calibration anchor: well CAPEX equals it at `well_ref_depth_m`).
 
 - [ ] **Step 4: Run the test, verify it passes**
 
@@ -352,7 +358,7 @@ def _scenario_root(tmp: Path) -> Path:
 
 def test_grid_properties_at_assembles_site(tmp_path: Path) -> None:
     root = _scenario_root(tmp_path)
-    sp = grid_properties_at(root, 141000.0, 455000.0, scenario="heat_pump", min_dist_km=4.0, sigma_interp_per_km=0.03)
+    sp = grid_properties_at(root, 141000.0, 455000.0, scenario="heat_pump", min_dist_km=4.0, base_sigma_log_trans=1.5, sigma_interp_per_km=0.03)
     assert isinstance(sp, SiteProperties)
     assert sp.power_mw_p50 == 5.0
     assert sp.temperature_c == 77.0
@@ -389,8 +395,6 @@ from geothermal.resource.thermogis_grid import Scenario, grid_path, value_at
 
 Source = Literal["measured", "thermogis_grid"]
 
-_SIGMA_GEOLOGY_LOG = 0.9  # base log-transmissivity spread; calibrated to the 4 wells' bands
-
 
 @dataclass(frozen=True, slots=True)
 class SiteProperties:
@@ -413,12 +417,16 @@ def grid_properties_at(
     *,
     scenario: Scenario,
     min_dist_km: float,
+    base_sigma_log_trans: float,
     sigma_interp_per_km: float,
 ) -> SiteProperties:
     """Assemble SiteProperties from the ThermoGIS grids at (x, y).
 
     ``min_dist_km`` is the distance to the nearest logged well; it inflates the modelled
-    uncertainty because the P50 grid is less trustworthy far from real data.
+    uncertainty because the P50 grid is less trustworthy far from real data. At a well
+    (``min_dist_km`` ~ 0) the band collapses to ``base_sigma_log_trans`` (the narrow,
+    measured-anchored width), which is how the measured-vs-modelled distinction is
+    realised, no separate provider needed.
     """
     def g(prop: str) -> float:
         return value_at(grid_path(root, scenario=scenario, prop=prop), x, y)
@@ -427,7 +435,7 @@ def grid_properties_at(
     thick = g("thickness_p50")
     ntg = g("net_to_gross")
     transmissivity = perm * thick * ntg / 1000.0
-    sigma = (_SIGMA_GEOLOGY_LOG**2 + (sigma_interp_per_km * min_dist_km) ** 2) ** 0.5
+    sigma = (base_sigma_log_trans**2 + (sigma_interp_per_km * min_dist_km) ** 2) ** 0.5
     return SiteProperties(
         x=x,
         y=y,
@@ -454,7 +462,11 @@ git add src/geothermal/resource/properties.py tests/test_properties.py
 git commit -m "feat: SiteProperties + ThermoGIS grid provider with modelled sigma"
 ```
 
-### Task 6: Measured provider for the 4 wells + nearest-well distance helper
+### Task 6: Nearest-logged-well distance helper
+
+The "measured tier" is delivered by the interp-sigma term collapsing to zero at a well
+(Task 5), so no separate measured provider is needed. We only need the distance helper
+that feeds that term and the candidate pipeline.
 
 **Files:**
 - Modify: `src/geothermal/resource/properties.py`
@@ -463,65 +475,38 @@ git commit -m "feat: SiteProperties + ThermoGIS grid provider with modelled sigm
 - [ ] **Step 1: Write the failing test**
 
 ```python
-from geothermal.resource.properties import measured_properties_at, nearest_well_km
+from geothermal.resource.properties import nearest_well_km
 from geothermal import config
 
 def test_nearest_well_km_zero_at_a_well() -> None:
     blt = config.WELLS["BLT-01"]
     assert nearest_well_km(blt.x, blt.y) < 1e-6
 
-def test_measured_properties_use_well_sheet_and_narrow_sigma() -> None:
-    blt = config.WELLS["BLT-01"]
-    sp = measured_properties_at("BLT-01")
-    assert sp.source == "measured"
-    assert sp.transmissivity_dm > 0
-    # measured sigma uses the well's own band, no interpolation term added
-    grid_like = (0.9**2 + (0.03 * 5.0) ** 2) ** 0.5
-    assert sp.sigma_log_trans <= grid_like
+def test_nearest_well_km_positive_away_from_wells() -> None:
+    # a point ~5 km from the nearest well
+    assert nearest_well_km(150000.0, 460000.0) > 1.0
 ```
 
 - [ ] **Step 2: Run it, verify it fails**
 
-Run: `uv run pytest tests/test_properties.py -k "measured or nearest" -v`
-Expected: FAIL (names not defined).
+Run: `uv run pytest tests/test_properties.py -k nearest -v`
+Expected: FAIL (name not defined).
 
 - [ ] **Step 3: Implement**
 
-Add to `properties.py` (uses the existing ThermoGIS sheet loader and config wells):
+Add to `properties.py`:
 
 ```python
 import numpy as np
 
 from geothermal import config
-from geothermal.io import load_thermogis
 
 
 def nearest_well_km(x: float, y: float) -> float:
     """Distance (km) from (x, y) to the nearest of the four logged wells."""
     d = [np.hypot(x - config.WELLS[w].x, y - config.WELLS[w].y) for w in config.WELL_IDS]
     return float(min(d) / 1000.0)
-
-
-def measured_properties_at(well_id: str) -> SiteProperties:
-    """SiteProperties for a logged well, anchored to its measured/ThermoGIS-sheet values."""
-    well = config.WELLS[well_id]
-    tg = load_thermogis()[well_id]
-    trans = tg.value("Transmissivity")
-    p10, p90 = tg.value("Transmissivity", "P10"), tg.value("Transmissivity", "P90")
-    sigma = abs(np.log(max(p10, 1e-6)) - np.log(max(p90, 1e-6))) / (2.0 * 1.2816)
-    return SiteProperties(
-        x=well.x,
-        y=well.y,
-        transmissivity_dm=trans,
-        temperature_c=tg.value("Temperature"),
-        power_mw_p50=0.0,  # filled by the power model where needed
-        depth_m=0.0,
-        sigma_log_trans=float(sigma),
-        source="measured",
-    )
 ```
-
-Note: verify the `ThermoGisWell.value` signature for percentiles (`value("Transmissivity", "P10")`); adapt to the actual accessor if it differs (it is the same accessor used in `assessment.py`).
 
 - [ ] **Step 4: Run the test, verify it passes**
 
@@ -534,7 +519,7 @@ Expected: PASS.
 uv run ruff check src/geothermal/resource/properties.py
 uv run pyright src/geothermal/resource/properties.py
 git add src/geothermal/resource/properties.py tests/test_properties.py
-git commit -m "feat: measured-well provider + nearest-well distance"
+git commit -m "feat: nearest-logged-well distance helper"
 ```
 
 ### Task 7: Validate grid vs provided sheets at the 4 wells (real-data test)
@@ -563,7 +548,7 @@ def test_grid_matches_provided_well_sheets() -> None:
     tg = load_thermogis()
     for wid in config.WELL_IDS:
         w = config.WELLS[wid]
-        sp = grid_properties_at(_ROOT, w.x, w.y, scenario="basecase", min_dist_km=0.0, sigma_interp_per_km=0.03)
+        sp = grid_properties_at(_ROOT, w.x, w.y, scenario="basecase", min_dist_km=0.0, base_sigma_log_trans=1.5, sigma_interp_per_km=0.03)
         assert abs(sp.temperature_c - tg[wid].value("Temperature")) < 2.0
 ```
 
@@ -778,15 +763,12 @@ from geothermal.economics.well_cost import well_capex_meur
 
 def test_well_capex_increases_with_depth() -> None:
     a = DEFAULT_ASSUMPTIONS
-    shallow = well_capex_meur(1500.0, a)
-    deep = well_capex_meur(3000.0, a)
-    assert deep > shallow > 0
+    assert well_capex_meur(3000.0, a) > well_capex_meur(1500.0, a) > 0
 
-def test_well_capex_matches_thermogis_formula_at_2000m() -> None:
+def test_well_capex_equals_provided_cost_at_reference_depth() -> None:
+    # the ThermoGIS shape is calibrated to reproduce the provided per-well cost at d_ref
     a = DEFAULT_ASSUMPTIONS
-    d_ah = 2000.0 * a.well_curvature_factor
-    expected = (a.well_capex_a + a.well_capex_b * d_ah + a.well_capex_c * d_ah**2) * a.well_capex_factor / 1.0e6
-    assert abs(well_capex_meur(2000.0, a) - expected) < 1e-9
+    assert abs(well_capex_meur(a.well_ref_depth_m, a) - a.well_cost_meur) < 1e-9
 ```
 
 - [ ] **Step 2: Run it, verify it fails**
@@ -797,10 +779,12 @@ Expected: FAIL (module not found).
 - [ ] **Step 3: Implement**
 
 ```python
-"""Depth-dependent well CAPEX (ThermoGIS/DoubletCalc-aligned).
+"""Depth-dependent well CAPEX, anchored to the provided LCOE.xlsx cost.
 
-Ties drilling cost to reservoir depth, so the spatial depth grid (and the logs' TVD)
-reach the LCoE. Along-hole depth = TVD x curvature factor.
+The provided per-well cost (``well_cost_meur``) is the anchor; ThermoGIS's depth
+polynomial provides only the SHAPE, scaled so it reproduces the provided cost at the
+reference depth. Deeper reservoir -> costlier well -> worse LCoE, without diverging from
+the provided cost model. Along-hole depth = TVD x curvature factor.
 """
 
 from __future__ import annotations
@@ -808,11 +792,15 @@ from __future__ import annotations
 from geothermal.assumptions import Assumptions
 
 
+def _poly(d: float, a: Assumptions) -> float:
+    return a.well_capex_a + a.well_capex_b * d + a.well_capex_c * d * d
+
+
 def well_capex_meur(tvd_m: float, a: Assumptions) -> float:
-    """CAPEX of one well (M€) for a reservoir true-vertical depth ``tvd_m``."""
-    d = tvd_m * a.well_curvature_factor
-    eur = (a.well_capex_a + a.well_capex_b * d + a.well_capex_c * d * d) * a.well_capex_factor
-    return eur / 1.0e6
+    """CAPEX of one well (M€) at reservoir TVD ``tvd_m``, calibrated to well_cost_meur at d_ref."""
+    ref = _poly(a.well_ref_depth_m * a.well_curvature_factor, a)
+    here = _poly(tvd_m * a.well_curvature_factor, a)
+    return a.well_cost_meur * here / ref
 ```
 
 - [ ] **Step 4: Run the test, verify it passes**
@@ -820,9 +808,12 @@ def well_capex_meur(tvd_m: float, a: Assumptions) -> float:
 Run: `uv run pytest tests/test_well_cost.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Wire into the cost model**
+- [ ] **Step 5: Wire an optional wells-CAPEX override into the cost model**
 
-In `src/geothermal/economics/costs.py`, the `evaluate_costs` signature gains an optional depth so existing callers keep working, and the wells term uses the depth formula when a depth is given. Change the signature and the `wells_pumps` line:
+The multi-site search computes a per-site wells CAPEX (each site at its own depth) and
+passes the total in. So `evaluate_costs` takes an optional `wells_capex_meur` that
+**replaces the whole `wells_pumps` term** (the caller includes pumps). When omitted,
+behaviour is unchanged. In `src/geothermal/economics/costs.py`:
 
 ```python
 def evaluate_costs(
@@ -831,25 +822,26 @@ def evaluate_costs(
     performance: SystemPerformance,
     *,
     assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
-    well_tvd_m: float | None = None,
+    wells_capex_meur: float | None = None,
 ) -> SystemCosts:
     ...
-    from geothermal.economics.well_cost import well_capex_meur
-    well_meur = (
-        well_capex_meur(well_tvd_m, a) if well_tvd_m is not None else a.well_cost_meur
-    )
     breakdown = {
-        "wells_pumps": n_doublets * (2 * well_meur + a.pump_cost_meur),
+        "wells_pumps": (
+            wells_capex_meur
+            if wells_capex_meur is not None
+            else n_doublets * (2 * a.well_cost_meur + a.pump_cost_meur)
+        ),
         ...
     }
 ```
 
-(Import `well_capex_meur` at module top, not inline, per repo style — shown inline here only for locality.)
+No new import needed here; `well_capex_meur` is called by the program search (Task 11),
+which sums per-site well costs and passes the total as `wells_capex_meur`.
 
 - [ ] **Step 6: Run the full suite, verify nothing breaks**
 
 Run: `uv run pytest -q`
-Expected: PASS (existing callers pass `well_tvd_m=None`, so behaviour is unchanged).
+Expected: PASS (existing callers omit `wells_capex_meur`, so behaviour is unchanged).
 
 - [ ] **Step 7: Lint, type-check, commit**
 
@@ -905,8 +897,8 @@ Expected: FAIL (module not found).
 
 A 'program' is a set of chosen doublet sites. Capacity is additive across sites; the
 LCoE is computed once at the system level (shared surface plant + demand saturation).
-Costs use each site's depth via the depth-dependent well CAPEX. Mean reservoir depth of
-the chosen sites drives the wells term (a simplification: one depth per program).
+Each site's wells are costed at its OWN depth (per-site well CAPEX, summed), so deeper
+sites genuinely cost more, the depth signal is not averaged away.
 """
 
 from __future__ import annotations
@@ -917,6 +909,7 @@ from geothermal.assumptions import DEFAULT_ASSUMPTIONS, Assumptions
 from geothermal.design import district_demand, heating_capacity_mw, simulate
 from geothermal.economics.costs import SystemCosts, evaluate_costs
 from geothermal.economics.optimization import design_for
+from geothermal.economics.well_cost import well_capex_meur
 from geothermal.resource.power import well_power_mw
 from geothermal.resource.properties import SiteProperties
 
@@ -946,8 +939,8 @@ def evaluate_program(
     )
     design = design_for(geo, a)
     perf = simulate(design, district_demand(assumptions=a))
-    mean_depth = sum(s.depth_m for s in sites) / len(sites)
-    costs = evaluate_costs(len(sites), design, perf, assumptions=a, well_tvd_m=mean_depth)
+    wells_capex = sum(2.0 * well_capex_meur(s.depth_m, a) for s in sites) + len(sites) * a.pump_cost_meur
+    costs = evaluate_costs(len(sites), design, perf, assumptions=a, wells_capex_meur=wells_capex)
     backup = perf.backup_heat_gj / perf.heat_delivered_gj if perf.heat_delivered_gj else 1.0
     return Program(
         sites=tuple(sites),
@@ -1058,7 +1051,16 @@ def search_program(
     return best
 ```
 
-Note: for large shortlists the size-k combinations grow fast; `max_program_doublets` (default 6) plus the early stop bound it. If a shortlist of 30 with k up to 6 proves slow, reduce `shortlist_size` — log the truncation.
+**Complexity:** combinations grow as C(shortlist, k). With the defaults `shortlist_size=12`
+and `max_program_doublets=4`, the worst case is C(12,4)=495 programs per k (a few thousand
+`simulate` calls total), bounded further by the early stop (1-2 doublets normally win). The
+viability list used for reporting can be larger; only the **exhaustive** stage uses the
+shortlist. Log if the shortlist truncates a larger viable set (no silent caps).
+
+**Objective scope:** this implements `min_lcoe` only (the deciding metric). `min_capex` and
+`max_capacity` from spec 4.4 are **deferred** here; the existing `search_designs` already
+covers parameter-space objectives, and they can be added to `search_program` later with the
+same stopping structure. Note this deferral in the report.
 
 - [ ] **Step 4: Run the test, verify it passes**
 
@@ -1130,7 +1132,8 @@ def program_monte_carlo(
     demand = district_demand(assumptions=a)
     mu = np.array([np.log(max(s.transmissivity_dm, 1e-6)) for s in sites])
     sigma = np.array([s.sigma_log_trans for s in sites])
-    mean_depth = sum(s.depth_m for s in sites) / len(sites)
+    # depth is not stochastic, so the wells CAPEX is the same every scenario: compute once.
+    wells_capex = sum(2.0 * well_capex_meur(s.depth_m, a) for s in sites) + len(sites) * a.pump_cost_meur
 
     lcoes = np.empty(n_samples, dtype=float)
     for i in range(n_samples):
@@ -1141,7 +1144,7 @@ def program_monte_carlo(
         )
         design = design_for(geo, a)
         perf = simulate(design, demand)
-        lcoes[i] = evaluate_costs(len(sites), design, perf, assumptions=a, well_tvd_m=mean_depth).lcoe_eur_per_gj
+        lcoes[i] = evaluate_costs(len(sites), design, perf, assumptions=a, wells_capex_meur=wells_capex).lcoe_eur_per_gj
     return {
         "p10": float(np.percentile(lcoes, 10)),
         "p50": float(np.percentile(lcoes, 50)),
@@ -1380,7 +1383,14 @@ git add -A && git commit -m "chore: verification fixups for grid-backed siting"
 
 ## Self-review notes
 
-- **Spec coverage:** provider seam (T5-6), AOI/candidates/viability (T8-9), Option-A search + stopping (T11-12), depth-driven CAPEX (T10), per-well Monte-Carlo (T13), wiring (T14-15), provenance/report (T16), config knobs (T2), deps/data (T1). Cost alignment (4.7) is covered by T10 + T16; full reconciliation of every ThermoGIS default is noted in the report, not re-litigated in code.
-- **Deferred per spec:** grid bias-correction (off by default, not implemented), P10/P90 grids (provider returns `sigma`; swap is future), HT-ATES cost realignment (kept as-is). These are intentional non-goals.
-- **Verify-against-real-data points flagged inline:** the `well_stimulation` filename suffix (T4) and the `ThermoGisWell.value` percentile accessor (T6) must be checked against the actual data/loader when first run.
-- **Behaviour-based tests** are used where exact numerics depend on unread internals (monotonicity, ordering, consistency-with-sheets), which is appropriate test design and avoids brittle magic numbers.
+- **Spec coverage:** provider seam (T5-6), AOI/candidates/viability (T8-9), Option-A search + stopping (T11-12), depth-driven CAPEX (T10), per-well Monte-Carlo (T13), wiring (T14-15), provenance/report (T16), config knobs (T2), deps/data (T1). Cost alignment (4.7) is covered by T10 + T16.
+- **Post-review corrections applied (2026-06-06):**
+  1. **Well CAPEX anchors on the provided LCOE.xlsx cost** and uses ThermoGIS only for the depth *shape* (`well_cost_meur * poly(d)/poly(d_ref)`). Adopting ThermoGIS's absolute coefficients would have given ~7.4 vs 3.24 M€/well and inflated LCoE ~2.3x on the wells term, breaking consistency with the provided model.
+  2. **Base sigma is a config field** (`base_sigma_log_trans`, default ~1.5 from the wells' real bands), not a hardcoded 0.9.
+  3. **The measured provider is dropped**; the narrow measured band emerges from the interp-sigma term collapsing to zero at well coordinates (T5/T6). Removes unused, half-broken code.
+  4. **Per-site well CAPEX is summed** (each site at its own depth), not averaged, so the depth-cost signal survives (T11/T13).
+  5. **Exhaustive shortlist bounded** to 12 with `max_program_doublets=4` to keep the combinatorics tractable (T2/T12).
+- **Deferred (intentional):** grid bias-correction (off by default), P10/P90 grids (provider returns `sigma`; swap is future), `min_capex`/`max_capacity` program objectives (T12), HT-ATES cost realignment. All noted in the report.
+- **Verify-against-real-data point flagged inline:** the `well_stimulation` filename suffix (T4) must be checked against the actual folder when first run.
+- **Robustness note (T3):** `crop_box` assumes ascending x/y coords (true for this grid, confirmed empirically). If a future grid has descending coords, `sel(slice)` returns empty; add an ascending-sort guard then.
+- **Behaviour-based tests** are used where exact numerics depend on unread internals (monotonicity, ordering, consistency-with-sheets), avoiding brittle magic numbers.

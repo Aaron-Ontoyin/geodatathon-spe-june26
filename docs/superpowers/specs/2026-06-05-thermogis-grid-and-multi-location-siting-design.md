@@ -276,3 +276,22 @@ stop (no fixed cap); one-point doublets; per-well independent Monte-Carlo; per-s
 with min-distance interpolation term; provider seam returning value+sigma+source; ThermoGIS
 grid as the resource source with depth-driven well CAPEX; cooling integration confirmed as
 our differentiator. All thresholds are config inputs.
+
+## 10. Revisions (2026-06-06, post plan-review)
+
+A careful review of the implementation plan corrected four points; this section supersedes
+the corresponding text above.
+
+- **4.5 well CAPEX — anchor on the provided LCOE.xlsx, not ThermoGIS absolutes.** The depth
+  term is `well_cost_meur * poly(d)/poly(d_ref)`: the provided per-well cost is reproduced
+  at the reference depth and only its *shape* varies with depth. Adopting ThermoGIS's
+  absolute coefficients (~7.4 vs the provided 3.24 M€/well) would inflate LCoE ~2.3x on the
+  wells term and break consistency with the cost model the organizers supplied. Per-site
+  well costs are summed (each site at its own depth), not averaged.
+- **4.6 base sigma is a config input** (`base_sigma_log_trans`, default ~1.5 from the wells'
+  P10/P90 bands), not a hardcoded constant. The measured tier needs no separate provider:
+  the interpolation term is zero at a well, so well cells get the narrow base band directly.
+- **Search is bounded.** The exhaustive shortlist is ~12 with a doublet backstop of 4 to keep
+  the combinatorics tractable; the early stop normally halts at 1-2 doublets.
+- **Objectives.** `search_program` implements `min_lcoe` (the deciding metric); `min_capex`
+  and `max_capacity` are deferred (the parameter-space optimizer already covers objectives).
