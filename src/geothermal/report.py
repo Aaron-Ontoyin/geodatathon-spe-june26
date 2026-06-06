@@ -247,7 +247,12 @@ def _limitations() -> str:
         "correlation would narrow the band somewhat.\n"
         "- The 1-doublet optimum relies on HT-ATES to cover the winter peak; we assume the "
         "storage can deliver the ~2 MW peak shortfall, which a sized ATES doublet can, but "
-        "which a detailed storage design should confirm."
+        "which a detailed storage design should confirm.\n"
+        "- The brief specifies only the peak loads (10 MWth heat, 5 MWth cold), not a profile. "
+        "We assume a degree-day-shaped Dutch monthly demand (~4,450 heating and ~2,480 cooling "
+        "full-load hours), which is conservative against the LCOE.xlsx 6,000 h. The energy "
+        "delivered, and hence the LCoE, scales with these hours; a flatter load would lower the "
+        "LCoE."
     )
 
 
