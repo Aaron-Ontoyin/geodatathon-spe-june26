@@ -26,8 +26,8 @@ _SCENARIO_DIR: dict[str, str] = {
 _SCENARIO_SUFFIX: dict[str, str] = {
     "basecase": "",
     "heat_pump": "_HP",
-    "well_stimulation": "_WS",
-    "well_stimulation_heat_pump": "_WS_HP",
+    "well_stimulation": "_STIM",
+    "well_stimulation_heat_pump": "_STIM_HP",
 }
 _RESERVOIR_DIR = "6_Permian/Upper Rotliegend Gp (RO)"
 

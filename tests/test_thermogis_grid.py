@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from geothermal.resource.thermogis_grid import crop_box, value_at
+from geothermal.resource.thermogis_grid import crop_box, grid_path, value_at
 
 
 def _write_grid(path: Path) -> None:
@@ -28,3 +28,13 @@ def test_crop_box_limits_extent(tmp_path: Path) -> None:
     xs, ys, vals = crop_box(p, center=(141500.0, 455000.0), size_m=2000.0)
     assert xs.min() >= 140000.0 and xs.max() <= 143000.0
     assert vals.shape == (ys.size, xs.size)
+
+
+def test_grid_path_builds_scenario_filename(tmp_path: Path) -> None:
+    root = tmp_path
+    p = grid_path(root, scenario="heat_pump", prop="power_p50")
+    assert p.name == "RO_STACKED_power_p50_HP.nc"
+    assert "Heat Pump" in str(p)
+    base = grid_path(root, scenario="basecase", prop="temperature")
+    assert base.name == "RO_STACKED_temperature.nc"
+    assert "BaseCase" in str(base)
