@@ -57,6 +57,7 @@ def build_report(*, assumptions: Assumptions = DEFAULT_ASSUMPTIONS, mc_samples: 
         _resource(a),
         _system_design(perf),
         _economics(ranked, best, band),
+        _africa_applicability(),
         _assumptions(a),
         _limitations(),
     ]
@@ -216,11 +217,44 @@ def _economics(ranked: list[DesignCandidate], best: DesignCandidate, band: dict[
     )
 
 
+def _africa_applicability() -> str:
+    return (
+        "## 5. Practical applicability to Africa\n\n"
+        "The case study is Dutch, because the subsurface data is public, but it was chosen as a "
+        "transferable template. What carries to an African (East African Rift) context is the "
+        "**method and the economics, not the specific reservoir numbers**.\n\n"
+        "**The data-science workflow transfers directly.** Operators appraising a new field "
+        "(e.g. KenGen or GDC in Kenya) face exactly the problems this pipeline solves: few wells, "
+        "missing or mislabelled logs, and large resource uncertainty. The reusable parts are "
+        "reservoir-agnostic: along-hole-to-TVD reconciliation, ML imputation of missing "
+        "petrophysics, probabilistic P10/50/90 resource assessment, a transparent LCoE model, "
+        "and the agentic workflow that automates the chain. Pointed at Rift well and GIS data, "
+        "the same code produces the same decision support.\n\n"
+        "**Cooling is more valuable in Africa than in the Netherlands.** Space-cooling and "
+        "cold-chain demand (food, agriculture, pharmaceuticals) are large and growing across "
+        "African cities, while heating demand is small. The heating+cooling integration here, "
+        "and especially the cooling and seasonal-storage logic, maps onto African demand better "
+        "than a heating-only scheme. Geothermal direct use for cooling, drying, greenhouses and "
+        "aquaculture is already established at Olkaria, so this is an extension of practice, not "
+        "a novelty.\n\n"
+        "**Cascaded, lowest-LCoE thinking fits a capital-constrained setting.** African "
+        "geothermal is mostly high-enthalpy and power-first; the separated brine and lower-"
+        "enthalpy flanks are an underused direct-use tail. The discipline of running the resource "
+        "hard (high utilisation) and optimising for the lowest credible LCoE at adequate "
+        "capacity, plus the staged drill-one-then-expand recommendation, is precisely how a "
+        "risk- and capital-constrained developer should sequence a project.\n\n"
+        "**What does not transfer:** the absolute resource (Rift volcanic systems are hotter and "
+        "shallower than the Dutch Rotliegend), the heating-led demand shape, and the specific "
+        "costs. The contribution is the workflow and the techno-economic framing, which a local "
+        "team would re-run on local data."
+    )
+
+
 def _assumptions(a: Assumptions) -> str:
     rows: list[Sequence[object]] = [[k, v] for k, v in a.model_dump().items()]
     table = _md_table(["Parameter", "Value"], rows)
     return (
-        "## 5. Assumptions\n\n"
+        "## 6. Assumptions\n\n"
         "Every tunable input, with its value (defaults from LCOE.xlsx + documented public "
         "ranges). All are parameters of the model — none are hidden constants.\n\n" + table
     )
@@ -228,7 +262,7 @@ def _assumptions(a: Assumptions) -> str:
 
 def _limitations() -> str:
     return (
-        "## 6. Limitations\n\n"
+        "## 7. Limitations\n\n"
         "- The spatial resource map is built from only four wells (two viable); a denser "
         "ThermoGIS regional grid would sharpen it and de-risk the sited location.\n"
         "- The system is modelled at a monthly energy-balance level (per the brief), not as a "

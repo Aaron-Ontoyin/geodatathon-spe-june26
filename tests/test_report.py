@@ -16,6 +16,7 @@ def test_report_covers_all_sections_and_key_numbers() -> None:
         "resource",
         "system design",
         "economics",
+        "applicability to africa",
         "assumptions",
         "limitations",
     ):
