@@ -36,6 +36,8 @@ def evaluate_costs(
     performance: SystemPerformance,
     *,
     assumptions: Assumptions = DEFAULT_ASSUMPTIONS,
+    wells_capex_meur: float | None = None,
+    transmission_capex_meur: float = 0.0,
 ) -> SystemCosts:
     """Compute CAPEX, OPEX and LCoE for a sized hybrid system."""
     a = assumptions
@@ -43,7 +45,12 @@ def evaluate_costs(
     monthly = performance.monthly
 
     breakdown = {
-        "wells_pumps": n_doublets * (2 * a.well_cost_meur + a.pump_cost_meur),
+        "wells_pumps": (
+            wells_capex_meur
+            if wells_capex_meur is not None
+            else n_doublets * (2 * a.well_cost_meur + a.pump_cost_meur)
+        ),
+        "transmission": transmission_capex_meur,
         "heat_plant": cap_heat * a.heat_plant_keur_per_mwth / 1000.0,
         "heat_pump": cap_heat * a.heat_pump_keur_per_mwth / 1000.0,
         "absorption_chiller": _peak(monthly, "abs_cool_mw") * a.absorption_keur_per_mwth / 1000.0,

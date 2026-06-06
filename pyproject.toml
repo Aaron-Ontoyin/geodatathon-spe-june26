@@ -29,6 +29,10 @@ web = [  # optional: the FastAPI backend for the demo app
     "uvicorn[standard]>=0.29",
     "sse-starlette>=2.1",
 ]
+data = [  # optional: read the ThermoGIS regional NetCDF grids
+    "xarray>=2024.0",
+    "netCDF4>=1.6",
+]
 
 [project.scripts]
 geo-datathon = "geothermal.cli:main"
@@ -66,3 +70,12 @@ reportMissingTypeStubs = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+filterwarnings = [
+    # netCDF4's prebuilt wheel is compiled against the numpy 1.x C ABI; importing it under
+    # numpy 2 prints a harmless "ndarray size changed" RuntimeWarning. Reads work correctly
+    # (the grid-vs-sheet test passes); we cannot rebuild the upstream wheel, so filter the
+    # specific message rather than leave noise or suppress warnings globally.
+    "ignore:numpy.ndarray size changed:RuntimeWarning",
+    # FastAPI TestClient's httpx deprecation, transitive, not our code.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]

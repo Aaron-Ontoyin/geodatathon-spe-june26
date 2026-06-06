@@ -20,5 +20,5 @@ def test_workflow_emits_progress_through_all_stages() -> None:
     events: list[Progress] = []
     run_workflow(mc_samples=200, on_progress=events.append)
     assert events
-    assert events[-1].done == events[-1].total == 6
+    assert events[-1].done == events[-1].total == 7
     assert events[-1].fraction == 1.0

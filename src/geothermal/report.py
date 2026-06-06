@@ -129,7 +129,15 @@ def _data_foundation() -> str:
         "log (calibrated on the cored wells) and **validated against the independent ThermoGIS "
         "regional model**:\n\n" + table + "\n\nObserved wells match ThermoGIS to <1%; imputed "
         "wells land within ~3%. Porosity uncertainty concentrates in the two non-viable wells, so "
-        "the resource decision is robust."
+        "the resource decision is robust.\n\n"
+        "Data provenance: the regional resource (transmissivity, temperature, depth, doublet "
+        "power, P10/P50/P90) is the public ThermoGIS model from TNO / NLOG (the national Dutch "
+        "subsurface portal), whose technical engine is DoubletCalc1D. The four provided wells are "
+        "used to clean the data and to validate ThermoGIS locally (porosity and measured "
+        "bottom-hole temperature are independent checks). The bulk ThermoGIS grid we use is "
+        "P50-only, so where the analysis interpolates between wells the uncertainty is modelled "
+        "rather than read. Cooling and the integrated heating+cooling system are our extension; "
+        "ThermoGIS itself models heat and heat storage only."
     )
 
 
@@ -204,7 +212,10 @@ def _economics(ranked: list[DesignCandidate], best: DesignCandidate, band: dict[
     return (
         "## 4. Techno-economics (Challenge 2B)\n\n"
         "Our LCoE model is a Python port of the provided TNO/ECN spreadsheet, calibrated to "
-        "reproduce its base case exactly (5.77 €/GJ), then extended for the hybrid system.\n\n"
+        "reproduce its base case exactly (5.77 €/GJ), then extended for the hybrid system. The "
+        "CAPEX includes the depth-dependent well cost (the spreadsheet's own formula at the "
+        "Utrecht reservoir depth) and the transmission main from the doublet to the demand "
+        "district, so the headline LCoE is all-in.\n\n"
         "Design comparison (lowest LCoE wins):\n\n" + design_table + "\n\n"
         f"The optimum is **{best.n_doublets} doublet(s) + HT-ATES at {best.lcoe_eur_per_gj:.1f} "
         f"€/GJ** ({best.lcoe_eur_per_gj * 3.6:.0f} €/MWh) — fewer wells plus seasonal storage beat "

@@ -31,3 +31,12 @@ def test_more_doublets_increase_capex() -> None:
     one = evaluate_costs(1, d1 := SystemDesign(geo_capacity_mw=5.0), simulate(d1, demand))
     two = evaluate_costs(2, d2 := SystemDesign(geo_capacity_mw=10.0), simulate(d2, demand))
     assert two.capex_meur > one.capex_meur
+
+
+def test_wells_capex_override_replaces_wells_term() -> None:
+    design = SystemDesign()
+    perf = simulate(design, district_demand())
+    base = evaluate_costs(2, design, perf)
+    override_val = base.capex_breakdown["wells_pumps"] + 5.0
+    overridden = evaluate_costs(2, design, perf, wells_capex_meur=override_val)
+    assert overridden.capex_meur == base.capex_meur + 5.0

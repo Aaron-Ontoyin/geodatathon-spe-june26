@@ -56,3 +56,14 @@ def test_well_spacing_constraint_is_honoured() -> None:
         w = config.WELLS[wid]
         spacing_km = float(np.hypot(rec["x"] - w.x, rec["y"] - w.y)) / 1000.0
         assert spacing_km >= 2.9, f"spacing assumption not honoured near {wid}"
+
+
+def test_new_siting_and_cost_fields_have_documented_defaults() -> None:
+    a = DEFAULT_ASSUMPTIONS
+    assert a.aoi_center_rd == (141171.0, 454890.0)
+    assert a.aoi_size_km == 20.0
+    assert a.viability_floor_mw > 0
+    assert a.well_curvature_factor == 1.1
+    assert a.base_sigma_log_trans > 0
+    assert a.sigma_interp_per_km >= 0
+    assert a.shortlist_size >= 4

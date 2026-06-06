@@ -73,7 +73,12 @@ def evaluate_candidate(
     geo_capacity = n_doublets * doublet_capacity_mw(a.injection_temp_c)
     design = design_for(geo_capacity, a)
     perf = simulate(design, district_demand(assumptions=a))
-    costs = evaluate_costs(n_doublets, design, perf, assumptions=a)
+    # Transmission main to the demand district (each doublet connects at the representative
+    # near-demand distance); keeps the canonical economics consistent with the grid search.
+    transmission = n_doublets * a.transmission_meur_per_km * a.demand_connection_km
+    costs = evaluate_costs(
+        n_doublets, design, perf, assumptions=a, transmission_capex_meur=transmission
+    )
     backup_fraction = (
         perf.backup_heat_gj / perf.heat_delivered_gj if perf.heat_delivered_gj else 1.0
     )

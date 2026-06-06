@@ -302,3 +302,24 @@ the corresponding text above.
   the combinatorics tractable; the early stop normally halts at 1-2 doublets.
 - **Objectives.** `search_program` implements `min_lcoe` (the deciding metric); `min_capex`
   and `max_capacity` are deferred (the parameter-space optimizer already covers objectives).
+
+## 11. Revisions (2026-06-06, post-implementation)
+
+The full grid pipeline was built (loader, provider, AOI lattice, program search, per-well
+Monte-Carlo, transmission cost) and is tested and live. During integration we found that
+making the grid path the **canonical** result is not the right call:
+
+- `shortlist_from_grid` ranks candidates by raw power and keeps the top N, so near-demand
+  moderate-power cells are excluded from the search; and with depth-dependent well cost in
+  play, the search prefers a shallower, cheaper-to-drill cell ~4 km from the district. A
+  distance-based transmission cost was added (and is correct economics) but cannot pull
+  siting back, because near-demand cells are not in the power-ranked shortlist.
+- The result was a far shallow site with a higher, assumption-sensitive LCoE (~23-28),
+  diverging from the clean, validated legacy headline (1 doublet in the proven BLT trend,
+  99% capacity factor, ~20.8 EUR/GJ).
+
+**Decision:** keep the legacy near-demand pipeline as the **canonical** recommendation, and
+present the unbiased grid multi-location search as an **independent robustness check** in the
+workflow (it confirms the doublet count). The grid pipeline remains fully built and tested;
+making it canonical would need an LCoE-/demand-aware shortlist (a future enhancement), not a
+power-ranked one.
