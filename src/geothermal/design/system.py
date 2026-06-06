@@ -89,12 +89,15 @@ def simulate(design: SystemDesign, demand: DemandProfile) -> SystemPerformance:
     comp_elec = comp_cool / design.compression_cop
 
     # --- Seasonal HT-ATES: charge summer surplus, discharge to cover the winter deficit ---
+    # Charge (stored energy) is bounded by the store's energy capacity; discharge is then
+    # charge x round-trip, so discharge is implicitly capped too. (Capping discharge directly
+    # would understate the loss and let stored energy exceed capacity.)
     geo_charge_available_mwh = np.maximum(geo_spare - geo_for_abs, 0.0) * hours
-    discharge_need_mwh = min(
-        float(np.sum(heat_remaining_mwh)), design.ates_capacity_gj / GJ_PER_MWH
-    )
+    discharge_need_mwh = float(np.sum(heat_remaining_mwh))
     charge_mwh = min(
-        discharge_need_mwh / design.ates_round_trip, float(np.sum(geo_charge_available_mwh))
+        discharge_need_mwh / design.ates_round_trip,
+        float(np.sum(geo_charge_available_mwh)),
+        design.ates_capacity_gj / GJ_PER_MWH,
     )
     actual_discharge_mwh = charge_mwh * design.ates_round_trip
 

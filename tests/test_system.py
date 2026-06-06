@@ -46,3 +46,10 @@ def test_undersized_geothermal_activates_storage_and_backup() -> None:
     # One doublet (5 MW) cannot meet the 10 MW heating peak alone → ATES and/or backup.
     perf = simulate(SystemDesign(geo_capacity_mw=5.0), district_demand())
     assert perf.ates_discharge_gj + perf.backup_heat_gj > 0.0
+
+
+def test_ates_discharge_respects_storage_capacity_and_round_trip() -> None:
+    # Stored energy is bounded by the store capacity, so discharge <= capacity * round_trip.
+    design = SystemDesign(geo_capacity_mw=6.14, ates_capacity_gj=1000.0, ates_round_trip=0.75)
+    perf = simulate(design, district_demand())
+    assert perf.ates_discharge_gj <= 1000.0 * 0.75 + 1e-6
