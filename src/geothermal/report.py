@@ -212,7 +212,10 @@ def _economics(ranked: list[DesignCandidate], best: DesignCandidate, band: dict[
     return (
         "## 4. Techno-economics (Challenge 2B)\n\n"
         "Our LCoE model is a Python port of the provided TNO/ECN spreadsheet, calibrated to "
-        "reproduce its base case exactly (5.77 €/GJ), then extended for the hybrid system.\n\n"
+        "reproduce its base case exactly (5.77 €/GJ), then extended for the hybrid system. The "
+        "CAPEX includes the depth-dependent well cost (the spreadsheet's own formula at the "
+        "Utrecht reservoir depth) and the transmission main from the doublet to the demand "
+        "district, so the headline LCoE is all-in.\n\n"
         "Design comparison (lowest LCoE wins):\n\n" + design_table + "\n\n"
         f"The optimum is **{best.n_doublets} doublet(s) + HT-ATES at {best.lcoe_eur_per_gj:.1f} "
         f"€/GJ** ({best.lcoe_eur_per_gj * 3.6:.0f} €/MWh) — fewer wells plus seasonal storage beat "

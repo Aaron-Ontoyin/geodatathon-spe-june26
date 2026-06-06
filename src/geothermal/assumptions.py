@@ -89,6 +89,15 @@ class Assumptions(BaseModel):
             "demand district. Assessment-level, capacity-agnostic."
         ),
     )
+    demand_connection_km: float = Field(
+        default=0.5,
+        ge=0,
+        description=(
+            "Representative distance (km) from the recommended near-demand doublet to the "
+            "district network; sets its transmission cost in the canonical economics (the "
+            "sited location is ~0.5 km from the demand district)."
+        ),
+    )
 
     # --- OPEX / prices ---
     electricity_price_eur_per_mwhe: float = Field(
