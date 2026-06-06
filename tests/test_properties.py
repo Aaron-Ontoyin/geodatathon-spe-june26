@@ -5,7 +5,8 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from geothermal.resource.properties import SiteProperties, grid_properties_at
+from geothermal import config
+from geothermal.resource.properties import SiteProperties, grid_properties_at, nearest_well_km
 
 
 def _grid(path: Path, const: float) -> None:
@@ -49,3 +50,12 @@ def test_grid_properties_at_assembles_site(tmp_path: Path) -> None:
     assert abs(sp.transmissivity_dm - 7.2) < 1e-6  # 80*100*0.9/1000
     assert sp.source == "thermogis_grid"
     assert sp.sigma_log_trans > 1.5  # base + interp term at 4 km
+
+
+def test_nearest_well_km_zero_at_a_well() -> None:
+    blt = config.WELLS["BLT-01"]
+    assert nearest_well_km(blt.x, blt.y) < 1e-6
+
+
+def test_nearest_well_km_positive_away_from_wells() -> None:
+    assert nearest_well_km(150000.0, 460000.0) > 1.0
