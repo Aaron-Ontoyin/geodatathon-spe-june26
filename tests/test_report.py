@@ -35,3 +35,11 @@ def test_write_report_creates_markdown_file(tmp_path: Path) -> None:
     path = write_report(tmp_path / "report.md", mc_samples=200)
     assert path.exists()
     assert path.read_text(encoding="utf-8").lstrip().startswith("#")
+
+
+def test_report_documents_thermogis_grid_provenance() -> None:
+    from geothermal.report import build_report
+    low = build_report(mc_samples=200).lower()
+    assert "thermogis" in low
+    assert "doubletcalc" in low
+    assert "nlog" in low

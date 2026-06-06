@@ -129,7 +129,15 @@ def _data_foundation() -> str:
         "log (calibrated on the cored wells) and **validated against the independent ThermoGIS "
         "regional model**:\n\n" + table + "\n\nObserved wells match ThermoGIS to <1%; imputed "
         "wells land within ~3%. Porosity uncertainty concentrates in the two non-viable wells, so "
-        "the resource decision is robust."
+        "the resource decision is robust.\n\n"
+        "Data provenance: the regional resource (transmissivity, temperature, depth, doublet "
+        "power, P10/P50/P90) is the public ThermoGIS model from TNO / NLOG (the national Dutch "
+        "subsurface portal), whose technical engine is DoubletCalc1D. The four provided wells are "
+        "used to clean the data and to validate ThermoGIS locally (porosity and measured "
+        "bottom-hole temperature are independent checks). The bulk ThermoGIS grid we use is "
+        "P50-only, so where the analysis interpolates between wells the uncertainty is modelled "
+        "rather than read. Cooling and the integrated heating+cooling system are our extension; "
+        "ThermoGIS itself models heat and heat storage only."
     )
 
 
