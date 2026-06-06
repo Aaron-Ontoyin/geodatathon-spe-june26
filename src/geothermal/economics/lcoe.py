@@ -3,9 +3,23 @@
 Ports the provided TNO/ECN ``LCOE.xlsx`` model to the standard levelized form
 ``LCoE = (CRF·CAPEX + annual OPEX) / annual energy``. The provider's spreadsheet
 uses a detailed debt/equity/tax cash flow (80/20 split, 6% debt, 15% equity, 25%
-tax, 15-year life); we capture that with a single **effective discount rate of
-9.3%**, chosen so this formulation reproduces the spreadsheet's base-case direct-
-heat result (5.77 €/GJ for 2 wells delivering 290,449 GJ/yr at 8.79 M€ CAPEX).
+tax, 15-year life, straight-line depreciation), discounting levered after-tax
+cash flows at the equity return; we capture that with a single **effective
+discount rate of 9.3%**, chosen so this form reproduces the spreadsheet's
+base-case direct-heat result (5.77 €/GJ for 2 wells, 290,449 GJ/yr, 8.79 M€).
+
+This single rate is not merely a base-case fit: with the financial structure
+fixed (as it is across our designs) and flat annual profiles (inflation = 0),
+the spreadsheet's LCoE is *linear* in CAPEX, OPEX and energy, and the OPEX and
+energy terms carry the same discount factor, which cancels in the ratio. So the
+spreadsheet LCoE reduces to ``(α·CAPEX + OPEX) / energy`` for a structural
+constant ``α``; calibrating CRF to ``α`` makes this form reproduce the
+spreadsheet for *every* design, not just the base case. We verified this
+empirically: a faithful re-implementation of the levered DCF tracks this form
+by a constant ratio across capex/opex/energy-varied designs. The only place the
+two part company is when ``discount_rate`` or ``economic_lifetime_years`` are
+themselves swept as levers, where this rate is a simplification of the full
+WACC/tax structure rather than a re-derivation of it.
 """
 
 from __future__ import annotations
