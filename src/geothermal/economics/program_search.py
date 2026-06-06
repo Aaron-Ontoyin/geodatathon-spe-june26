@@ -50,7 +50,11 @@ def evaluate_program(
     wells_capex = sum(
         2.0 * well_capex_meur(s.depth_m * a.well_curvature_factor) for s in sites
     ) + len(sites) * a.pump_cost_meur
-    costs = evaluate_costs(len(sites), design, perf, assumptions=a, wells_capex_meur=wells_capex)
+    transmission = _transmission_capex_meur(sites, a)
+    costs = evaluate_costs(
+        len(sites), design, perf, assumptions=a,
+        wells_capex_meur=wells_capex, transmission_capex_meur=transmission,
+    )
     backup = perf.backup_heat_gj / perf.heat_delivered_gj if perf.heat_delivered_gj else 1.0
     return Program(
         sites=tuple(sites),
@@ -115,10 +119,12 @@ def program_monte_carlo(
     demand = district_demand(assumptions=a)
     mu = np.array([np.log(max(s.transmissivity_dm, 1e-6)) for s in sites])
     sigma = np.array([s.sigma_log_trans for s in sites])
-    # depth is not stochastic, so the wells CAPEX is the same every scenario: compute once.
+    # depth and location are not stochastic, so wells CAPEX and transmission are the same
+    # every scenario: compute once.
     wells_capex = sum(
         2.0 * well_capex_meur(s.depth_m * a.well_curvature_factor) for s in sites
     ) + len(sites) * a.pump_cost_meur
+    transmission = _transmission_capex_meur(sites, a)
 
     lcoes = np.empty(n_samples, dtype=float)
     for i in range(n_samples):
@@ -130,7 +136,8 @@ def program_monte_carlo(
         design = design_for(geo, a)
         perf = simulate(design, demand)
         lcoes[i] = evaluate_costs(
-            len(sites), design, perf, assumptions=a, wells_capex_meur=wells_capex
+            len(sites), design, perf, assumptions=a,
+            wells_capex_meur=wells_capex, transmission_capex_meur=transmission,
         ).lcoe_eur_per_gj
     return {
         "p10": float(np.percentile(lcoes, 10)),
@@ -145,3 +152,13 @@ def _spaced(combo: tuple[SiteProperties, ...], min_spacing_m: float) -> bool:
         if np.hypot(a_site.x - b_site.x, a_site.y - b_site.y) < min_spacing_m:
             return False
     return True
+
+
+def _transmission_capex_meur(
+    sites: tuple[SiteProperties, ...] | list[SiteProperties], a: Assumptions
+) -> float:
+    """Pipeline CAPEX (M€): each site connects to the demand district at a.aoi_center_rd."""
+    cx, cy = a.aoi_center_rd
+    return sum(
+        a.transmission_meur_per_km * float(np.hypot(s.x - cx, s.y - cy)) / 1000.0 for s in sites
+    )

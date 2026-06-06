@@ -81,6 +81,14 @@ class Assumptions(BaseModel):
     ates_meur: float = Field(
         default=2.0, ge=0, description="HT-ATES doublet + heat exchangers (M€)."
     )
+    transmission_meur_per_km: float = Field(
+        default=0.8,
+        ge=0,
+        description=(
+            "District-heat transmission main cost (M€ per km) from a doublet site to the "
+            "demand district. Assessment-level, capacity-agnostic."
+        ),
+    )
 
     # --- OPEX / prices ---
     electricity_price_eur_per_mwhe: float = Field(

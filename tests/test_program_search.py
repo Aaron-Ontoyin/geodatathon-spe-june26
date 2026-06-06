@@ -63,3 +63,22 @@ def test_independent_draws_produce_ordered_band() -> None:
     band = program_monte_carlo(sites, assumptions=a, n_samples=400, seed=1)
     assert band["p10"] <= band["p50"] <= band["p90"]
     assert band["p90"] - band["p10"] >= 0
+
+
+def test_transmission_cost_penalises_distant_sites() -> None:
+    from geothermal.economics.program_search import evaluate_program
+    a = DEFAULT_ASSUMPTIONS
+    cx, cy = a.aoi_center_rd
+    near = SiteProperties(
+        x=cx, y=cy, transmissivity_dm=9.0, temperature_c=77.0,
+        power_mw_p50=6.0, depth_m=2280.0, sigma_log_trans=1.5, source="thermogis_grid",
+    )
+    far = SiteProperties(
+        x=cx + 8000.0, y=cy, transmissivity_dm=9.0, temperature_c=77.0,
+        power_mw_p50=6.0, depth_m=2280.0, sigma_log_trans=1.5, source="thermogis_grid",
+    )
+    near_prog = evaluate_program([near], assumptions=a)
+    far_prog = evaluate_program([far], assumptions=a)
+    # identical reservoir, but the far site carries 8 km of extra transmission main
+    assert far_prog.capex_meur > near_prog.capex_meur
+    assert far_prog.lcoe_eur_per_gj > near_prog.lcoe_eur_per_gj
