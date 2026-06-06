@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import numpy as np
+import pytest
 
 from geothermal import config
+from geothermal.assumptions import DEFAULT_ASSUMPTIONS
 from geothermal.resource import siting
 from geothermal.resource.properties import SiteProperties
 from geothermal.resource.siting import candidate_lattice
+from geothermal.resource.thermogis_grid import grid_path
 
 
 def test_lattice_covers_box_at_pitch_and_includes_wells() -> None:
@@ -46,3 +52,16 @@ def test_candidates_filtered_and_shortlisted() -> None:
     short = siting.shortlist(sites, size=10)
     assert len(short) == 10
     assert short[0].power_mw_p50 >= short[-1].power_mw_p50
+
+
+_ROOT = Path(os.environ.get("GEO_THERMOGIS_ROOT", "data/thermogis_grid"))
+
+
+@pytest.mark.skipif(
+    not grid_path(_ROOT, scenario="heat_pump", prop="power_p50").exists(),
+    reason="ThermoGIS grid not present",
+)
+def test_shortlist_from_grid_returns_viable_sites() -> None:
+    sites = siting.shortlist_from_grid(_ROOT, assumptions=DEFAULT_ASSUMPTIONS)
+    assert sites, "expected at least one viable candidate in the AOI"
+    assert all(s.power_mw_p50 >= DEFAULT_ASSUMPTIONS.viability_floor_mw for s in sites)
