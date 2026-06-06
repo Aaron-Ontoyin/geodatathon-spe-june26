@@ -29,6 +29,10 @@ from geothermal.petrophysics import imputed_vs_thermogis
 from geothermal.resource import locate_demand_center, recommend_new_well, well_power_percentiles
 
 _TORNADO_FIELDS = {
+    # Injection temperature is the single most decision-critical lever: it sets doublet
+    # capacity and so whether one doublet meets demand. Heat-pump-enabled ~30 C vs a
+    # conservative ~42 C bare-doublet return spans the realistic range.
+    "injection_temp_c": (30.0, 42.0),
     "electricity_price_eur_per_mwhe": (100.0, 200.0),
     "well_cost_meur": (2.0, 5.0),
     "discount_rate": (0.06, 0.12),
@@ -89,7 +93,14 @@ def _executive_summary(
         f"cooling as well as heating (vs {perf.geo_capacity_factor_heating_only * 100:.0f}% "
         "heating-only) — running the wells hard year-round is why the cost is low.\n"
         f"- CAPEX **{best.capex_meur:.0f} M€**, all-in cost spread over heat + cold delivered.\n\n"
-        "Because a single well carries large resource uncertainty (and a second nearby well, "
+        f"This one-doublet result depends on **heat-pump-enabled reinjection at "
+        f"{best.injection_temp_c:.0f} °C**, which is what lets a single doublet meet demand: the "
+        "heat pump cools the return brine below the network temperature, maximising geothermal "
+        "extraction (the same mechanism ThermoGIS models for its heat-pump option). At a "
+        "conservative bare-doublet return (~39 °C) one doublet no longer meets demand and a second "
+        "is needed, so injection temperature is the most decision-critical assumption (see the "
+        "sensitivity tornado).\n\n"
+        "Because a single well also carries large resource uncertainty (and a second nearby well, "
         "sharing the same geology, does **not** de-risk it), the recommendation is to drill one "
         "doublet, well-test it, and expand only if the data justify it."
     )
@@ -223,7 +234,12 @@ def _limitations() -> str:
         "- The system is modelled at a monthly energy-balance level (per the brief), not as a "
         "transient reservoir/thermodynamic simulation.\n"
         "- Surface-component unit costs are public-range estimates; the tornado shows which ones "
-        "matter (electricity price, well cost, discount rate) and which do not.\n"
+        "matter (injection temperature, electricity price, well cost, discount rate) and which "
+        "do not.\n"
+        "- Doublet capacity is most sensitive to the **reinjection temperature**. Our power model "
+        "is calibrated to ThermoGIS at ~39 °C and we extrapolate it linearly to the heat-pump-"
+        "enabled 30 °C; the one-doublet recommendation depends on that 30 °C assumption (the "
+        "tornado quantifies the swing, and the count flips to two doublets near ~37 °C).\n"
         "- The Monte-Carlo assumes a single correlated transmissivity field; partial spatial "
         "correlation would narrow the band somewhat.\n"
         "- The 1-doublet optimum relies on HT-ATES to cover the winter peak; we assume the "

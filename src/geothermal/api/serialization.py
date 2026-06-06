@@ -27,6 +27,8 @@ from geothermal.resource import (
 
 API_MC_SAMPLES = 1500
 TORNADO_FIELDS = {
+    # Injection temperature drives doublet capacity and the doublet count: the top lever.
+    "injection_temp_c": (30.0, 42.0),
     "electricity_price_eur_per_mwhe": (100.0, 200.0),
     "well_cost_meur": (2.0, 5.0),
     "discount_rate": (0.06, 0.12),
