@@ -92,7 +92,7 @@ def run_workflow(
         WorkflowStep(
             name="Resource assessment",
             action="Computed P90/P50/P10 doublet power per well from the calibrated model.",
-            decision=f"Only {len(viable)} of {len(pct)} wells are viable "
+            decision=f"{len(viable)} of {len(pct)} wells are viable "
             f"({', '.join(viable)}); the given wells alone cannot meet 10 MWth, "
             "so a new well must be sited.",
             metrics={"viable_wells": float(len(viable))},
