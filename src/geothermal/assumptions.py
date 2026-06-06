@@ -122,5 +122,42 @@ class Assumptions(BaseModel):
         description="Max share of heat from backup for a design to count as geothermal.",
     )
 
+    # --- Area of interest and siting ---
+    aoi_center_rd: tuple[float, float] = Field(
+        default=(141171.0, 454890.0),
+        description=(
+            "Demand-district centre (RD-New metres); the 20x20 km siting box centres here."
+        ),
+    )
+    aoi_size_km: float = Field(
+        default=20.0, gt=0, description="Side length of the square siting box (km)."
+    )
+    viability_floor_mw: float = Field(
+        default=2.0,
+        ge=0,
+        description="Minimum ThermoGIS doublet power (MW) for a cell to be a candidate site.",
+    )
+    shortlist_size: int = Field(
+        default=12,
+        ge=4,
+        description="Strongest candidate cells kept for the exhaustive program search.",
+    )
+    max_program_doublets: int = Field(
+        default=4, ge=1, description="Backstop cap on doublets in a program."
+    )
+    well_curvature_factor: float = Field(
+        default=1.1, ge=1, description="Along-hole/TVD ratio for deviated wells."
+    )
+    base_sigma_log_trans: float = Field(
+        default=1.5,
+        ge=0,
+        description="Base log-transmissivity spread, from the 4 wells' P10/P90 bands.",
+    )
+    sigma_interp_per_km: float = Field(
+        default=0.03,
+        ge=0,
+        description="Extra log-transmissivity uncertainty per km from the nearest logged well.",
+    )
+
 
 DEFAULT_ASSUMPTIONS = Assumptions()
