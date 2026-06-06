@@ -132,6 +132,16 @@ frontend/            # React + Vite demo app (TypeScript)
 tests/               # pytest
 notebooks/           # runnable analysis notebooks (D1 deliverable)
 data/                # provided datasets (plus data/raw/*.las)
+data/thermogis_grid/ # ThermoGIS Rotliegend grids (subset actually used; see below)
 docs/                # challenge brief, FAQ, submission guidelines, design spec
 outputs/             # generated figures and reports (gitignored, regenerated)
 ```
+
+### Supplementary data: ThermoGIS grids
+
+`data/thermogis_grid/` holds the public ThermoGIS regional grids (TNO / NLOG) for the
+Upper Rotliegend (RO). We include **only the subset actually used**: the BaseCase and
+Heat Pump scenarios, six properties each (depth, net-to-gross, permeability P50, power
+P50, temperature, thickness P50), about 3 MB. These drive the independent grid-based
+siting check; the canonical pipeline runs without them. To use a different location or
+the full dataset, point `GEO_THERMOGIS_ROOT` at a ThermoGIS export with the same layout.

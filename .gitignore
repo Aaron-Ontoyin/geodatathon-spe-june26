@@ -29,6 +29,3 @@ dist/
 docs/Kick-Off Webinar.mp4
 docs/*.pptx
 docs/*.pdf
-
-# ThermoGIS regional grids (large, supplementary public data; kept locally)
-data/thermogis_grid/
