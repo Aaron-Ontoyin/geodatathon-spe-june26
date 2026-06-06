@@ -29,6 +29,10 @@ web = [  # optional: the FastAPI backend for the demo app
     "uvicorn[standard]>=0.29",
     "sse-starlette>=2.1",
 ]
+data = [  # optional: read the ThermoGIS regional NetCDF grids
+    "xarray>=2024.0",
+    "netCDF4>=1.6",
+]
 
 [project.scripts]
 geo-datathon = "geothermal.cli:main"
