@@ -176,14 +176,13 @@ This replaces both `recommend_new_well` (single cell) and the N-copies scaling i
 
 ### 4.5 The logs' economic role (depth-driven CAPEX)
 
-Adopt the ThermoGIS depth-dependent well-cost formula so that reservoir **depth** drives
-CAPEX, which is what makes the logs/grid reach the LCoE:
+Use the provided LCOE.xlsx well-cost formula so that reservoir **depth** drives CAPEX,
+which is what makes the logs/grid reach the LCoE (see Revisions, section 10):
 
-`well_capex(d) = (well_capex_a + well_capex_b*d + well_capex_c*d^2) * well_capex_factor`
+`well_capex(d) = 1.5 * (0.2*d^2 + 700*d + 250000) * 1e-6`   (M€)
 
-defaults from ThermoGIS (`a=375000, b=1150, c=0.3, factor=1.5`), d = along-hole depth
-derived from the cell's TVD via the well stepout/curvature factor (config
-`well_curvature_factor`, ThermoGIS uses 1.1). Deeper cell -> costlier well -> worse LCoE.
+per LCOE.xlsx cell D12, where d is along-hole depth (= cell TVD x `well_curvature_factor`,
+1.1). Ported in `geothermal.economics.well_cost`. Deeper cell -> costlier well -> worse LCoE.
 
 The 4 wells additionally:
 - exercise the Challenge-1 petrophysics (TVD reconstruction, porosity imputation),
@@ -231,7 +230,7 @@ at the well cells as a sanity check.
 - `aoi_center_rd: tuple[float, float]`, `aoi_size_km: float = 20`.
 - `viability_floor_mw: float`.
 - `min_well_spacing_km` (already exists; now also the lattice pitch + inter-doublet rule).
-- `well_capex_a/b/c/factor`, `well_curvature_factor`.
+- `well_curvature_factor` (well-cost coefficients live in `geothermal.economics.well_cost`).
 - `sigma_interp_*` (decay of interpolation uncertainty with distance).
 - `objective` and the existing demand/cost constraints.
 - `shortlist_size`, max program size guard (large, just a backstop).
