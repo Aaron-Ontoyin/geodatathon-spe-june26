@@ -11,6 +11,8 @@ deck always matches the latest results. Outputs land in ``outputs/`` (gitignored
 
 from __future__ import annotations
 
+import base64
+import html
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -62,6 +64,7 @@ DPI = 150
 
 FIG_DIR = config.OUTPUTS_DIR / "figures"
 PPTX_PATH = config.OUTPUTS_DIR / "Team_GEOTHERM_PPT_V1.pptx"
+HTML_PATH = config.OUTPUTS_DIR / "Team_GEOTHERM_PPT_V1.html"
 
 
 def _apply_style() -> None:
@@ -620,6 +623,216 @@ def build_deck(nums: DeckNumbers, figs: dict[str, Path]) -> Path:
 
 
 # --------------------------------------------------------------------------- #
+# Self-contained HTML deck (browser-openable, print-to-PDF)
+# --------------------------------------------------------------------------- #
+_HTML_CSS = f"""
+:root {{
+  --teal: {TEAL};
+  --teal-dark: {TEAL_DARK};
+  --sienna: {SIENNA};
+  --slate: {SLATE};
+  --sand: #f3eee3;
+}}
+* {{ box-sizing: border-box; }}
+html, body {{ margin: 0; padding: 0; }}
+body {{
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  color: var(--slate);
+  background: #cdd4d4;
+}}
+.deck {{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 28px 0;
+}}
+.slide {{
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  padding: 56px 64px;
+  display: flex;
+  flex-direction: column;
+}}
+.slide.title {{
+  background: var(--teal-dark);
+  color: #ffffff;
+  justify-content: center;
+  padding: 80px 96px;
+}}
+.slide.title h1 {{
+  font-size: 46px;
+  line-height: 1.18;
+  margin: 0 0 36px 0;
+  font-weight: 700;
+  max-width: 1000px;
+}}
+.slide.title .team {{
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--sand);
+  margin: 0 0 8px 0;
+}}
+.slide.title .members {{
+  font-size: 22px;
+  margin: 0 0 18px 0;
+  color: #ffffff;
+}}
+.slide.title .event {{
+  font-size: 18px;
+  color: var(--sand);
+  margin: 0 0 24px 0;
+}}
+.slide.title .thesis {{
+  font-size: 22px;
+  font-weight: 700;
+  font-style: italic;
+  color: #e8a972;
+  margin: 0;
+}}
+.slide .bar {{
+  background: var(--teal);
+  color: #ffffff;
+  margin: -56px -64px 28px -64px;
+  padding: 24px 64px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+}}
+.slide .content {{
+  display: flex;
+  flex: 1;
+  gap: 40px;
+  min-height: 0;
+}}
+.slide .bullets {{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}}
+.slide ul {{
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}}
+.slide li {{
+  position: relative;
+  font-size: 21px;
+  line-height: 1.4;
+  margin: 0 0 18px 0;
+  padding-left: 26px;
+}}
+.slide li::before {{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 11px;
+  height: 11px;
+  background: var(--sienna);
+  border-radius: 2px;
+}}
+.slide.has-image .bullets li {{ font-size: 19px; margin-bottom: 14px; }}
+.slide .figure {{
+  flex: 1.15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}}
+.slide .figure img {{
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}}
+.slide .pageno {{
+  position: absolute;
+  bottom: 18px;
+  right: 28px;
+  font-size: 14px;
+  color: #8a9494;
+}}
+@media print {{
+  body {{ background: #ffffff; }}
+  .deck {{ gap: 0; padding: 0; }}
+  .slide {{
+    box-shadow: none;
+    page-break-after: always;
+    break-after: page;
+  }}
+  @page {{ size: landscape; margin: 0; }}
+}}
+"""
+
+
+def _embed_image(path: Path) -> str:
+    data = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{data}"
+
+
+def _title_slide_html(nums: DeckNumbers) -> str:
+    del nums
+    return (
+        '<section class="slide title">'
+        "<h1>Geothermal District Heating &amp; Cooling for Utrecht: "
+        "the lowest-cost path to &gt;=10 MWth heat + &gt;=5 MWth cooling</h1>"
+        '<p class="team">Team [TEAM NAME]</p>'
+        '<p class="members">[MEMBER NAMES + SPE MEMBER NUMBERS]</p>'
+        '<p class="event">SPE Africa Geothermal Datathon 2026</p>'
+        '<p class="thesis">"Not the most megawatts, the lowest, most credible '
+        'LCoE."</p>'
+        "</section>"
+    )
+
+
+def _content_slide_html(spec: SlideSpec, embedded: dict[Path, str], pageno: int) -> str:
+    bullets = "".join(f"<li>{html.escape(b)}</li>" for b in spec.bullets)
+    has_image = spec.image is not None
+    cls = "slide has-image" if has_image else "slide"
+    figure = ""
+    if has_image and spec.image is not None:
+        figure = (
+            f'<div class="figure"><img alt="{html.escape(spec.title)}" '
+            f'src="{embedded[spec.image]}"></div>'
+        )
+    return (
+        f'<section class="{cls}">'
+        f'<div class="bar">{html.escape(spec.title)}</div>'
+        f'<div class="content"><div class="bullets"><ul>{bullets}</ul></div>'
+        f"{figure}</div>"
+        f'<div class="pageno">{pageno}</div>'
+        "</section>"
+    )
+
+
+def build_html_deck(nums: DeckNumbers, figs: dict[str, Path]) -> Path:
+    embedded = {path: _embed_image(path) for path in figs.values()}
+    specs = _slide_specs(nums, figs)
+    slides = [_title_slide_html(nums)]
+    slides += [
+        _content_slide_html(spec, embedded, i)
+        for i, spec in enumerate(specs, start=2)
+    ]
+    body = "".join(slides)
+    document = (
+        "<!DOCTYPE html>"
+        '<html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        "<title>Team GEOTHERM, Geothermal Datathon Deck</title>"
+        f"<style>{_HTML_CSS}</style></head>"
+        f'<body><div class="deck">{body}</div></body></html>'
+    )
+    HTML_PATH.write_text(document, encoding="utf-8")
+    return HTML_PATH
+
+
+# --------------------------------------------------------------------------- #
 # Entry point
 # --------------------------------------------------------------------------- #
 def main() -> None:
@@ -649,9 +862,10 @@ def main() -> None:
         lcoe_by_doublets=lcoe_by_doublets,
     )
     pptx_path = build_deck(nums, figs)
+    html_path = build_html_deck(nums, figs)
 
     print("Generated files:")
-    for path in (*figs.values(), pptx_path):
+    for path in (*figs.values(), pptx_path, html_path):
         size_kb = path.stat().st_size / 1024
         print(f"  {path}  ({size_kb:.1f} KB)")
     print()
