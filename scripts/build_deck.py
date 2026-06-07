@@ -179,7 +179,7 @@ def fig_design_comparison() -> tuple[Path, dict[int, float]]:
     fig, ax = plt.subplots(figsize=(7.5, 5))
     colors = [HIGHLIGHT if n == best_n else TEAL for n in doublets]
     bars = ax.bar([str(n) for n in doublets], [lcoe[n] for n in doublets], color=colors, width=0.6)
-    for bar, n in zip(bars, doublets):
+    for bar, n in zip(bars, doublets, strict=True):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
             bar.get_height() + 0.6,
@@ -245,7 +245,7 @@ def fig_tornado() -> Path:
     fig, ax = plt.subplots(figsize=(8.5, 5))
     bars = ax.barh(labels, df["swing"], color=TEAL, height=0.6)
     bars[-1].set_color(HIGHLIGHT)  # top driver
-    for bar, swing in zip(bars, df["swing"]):
+    for bar, swing in zip(bars, df["swing"], strict=True):
         ax.text(
             bar.get_width() + max(df["swing"]) * 0.01,
             bar.get_y() + bar.get_height() / 2,
