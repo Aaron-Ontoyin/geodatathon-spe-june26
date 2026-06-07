@@ -29,3 +29,6 @@ dist/
 docs/Kick-Off Webinar.mp4
 docs/*.pptx
 docs/*.pdf
+
+# Internal planning/specs (kept locally, not part of the deliverable)
+docs/superpowers/
