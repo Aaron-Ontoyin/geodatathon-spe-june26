@@ -417,15 +417,13 @@ def _add_textbox(slide: object, left: Inches, top: Inches, width: Inches, height
 
 
 def _fill_background(slide: object, prs: Presentation, color: RGBColor) -> None:
-    rect = slide.shapes.add_shape(  # type: ignore[attr-defined]
-        1, Inches(0), Inches(0), prs.slide_width, prs.slide_height
-    )
-    rect.fill.solid()
-    rect.fill.fore_color.rgb = color
-    rect.line.fill.background()
-    rect.shadow.inherit = False
-    slide.shapes._spTree.remove(rect._element)  # type: ignore[attr-defined]
-    slide.shapes._spTree.insert(2, rect._element)  # type: ignore[attr-defined]
+    # Use the slide's own background fill (a standard OOXML construct) rather than a
+    # full-bleed rectangle reordered in the shape tree: the latter trips strict readers
+    # like Keynote. ``prs`` is unused now but kept for a stable call signature.
+    del prs
+    background = slide.background  # type: ignore[attr-defined]
+    background.fill.solid()
+    background.fill.fore_color.rgb = color
 
 
 def _slide_specs(
