@@ -32,3 +32,6 @@ docs/*.pdf
 
 # Internal planning/specs (kept locally, not part of the deliverable)
 docs/superpowers/
+
+# Built submission artifacts (zip etc.)
+submission/
