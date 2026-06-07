@@ -74,17 +74,37 @@ These are the traps in the provided data that the loaders correct (see
 - The ThermoGIS `BLT-01` sheet mislabels its inner *Well Name* cell as `PKP-01`, so the
   loader keys wells by sheet name and coordinates instead of that cell.
 
+## Prerequisites
+
+There are two tiers. The analysis (the graded result) needs only Python. The interactive
+app is optional and additionally needs Node.
+
+- **Python 3.11 or newer**, with [uv](https://docs.astral.sh/uv/) (the package and
+  environment manager). All Python dependencies are pinned in `pyproject.toml` and
+  `uv.lock`, with a plain `requirements.txt` provided for pip users.
+- **Node 18+ and [pnpm](https://pnpm.io/)** only if you want to run the demo app. They are
+  not needed to reproduce any number, figure or report.
+
+Why the main dependencies are here: numpy/pandas/scipy (numerics), scikit-learn (the
+porosity imputation), lasio (read the LAS well logs), openpyxl (read the provided Excel
+sheets and the LCOE model), pykrige and pyarrow (spatial interpolation and the cached
+dataset), pydantic (the typed, self-validating `Assumptions` config), xarray and netCDF4
+(read the ThermoGIS regional grid, under the optional `data` extra), and fastapi/uvicorn
+plus the React app (the optional `web` extra) for the demo.
+
 ## Setup
 
-The project uses [uv](https://docs.astral.sh/uv/) for Python and
-[pnpm](https://pnpm.io/) for the frontend.
-
 ```bash
-uv sync --all-extras        # create .venv and install Python deps (incl. web, llm, notebooks)
+uv sync --all-extras        # create .venv and install Python deps (incl. web, data, notebooks)
 uv run pytest               # run the test suite
 uv run ruff check .         # lint
 uv run pyright              # type-check
 ```
+
+Plain pip alternative (no uv): `pip install -r requirements.txt`.
+
+Everything below this point that starts with `uv run` is the analysis and needs only the
+Python setup above. The frontend build is required only for the optional browser app.
 
 ## Using it from the command line
 
@@ -117,10 +137,13 @@ uv run geo-datathon workflow --input inputs.toml
 
 `inputs.example.toml` shows the full input format, including the search block.
 
-## Using it from the browser
+## Using it from the browser (optional)
 
-For a quick look, build the frontend once and let the backend serve it. This is a
-single process: no separate frontend server.
+The app is a convenience, not needed to reproduce the results. The backend serves the
+frontend as static files, but those files must be built first: `pnpm build` compiles the
+React app into `frontend/dist`, which is exactly what FastAPI then serves. So the build
+step is still required the first time (and after any frontend change). This runs as a
+single process, no separate frontend server.
 
 ```bash
 cd frontend && pnpm install && pnpm build && cd ..
