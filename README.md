@@ -1,17 +1,43 @@
 # Geothermal Datathon 2026: Utrecht Heating and Cooling
 
-This repository is our entry for the SPE Africa Geothermal Datathon 2026. The task is
-to assess the Rotliegend (Slochteren) geothermal resource near Utrecht in the
-Netherlands and design a district energy system that delivers at least 10 MWth of
-heating and at least 5 MWth of cooling.
+**Project:** A least-cost geothermal district heating and cooling system for Utrecht.
+**Event:** SPE Africa Geothermal Datathon 2026.
 
-The judging metric is the levelized cost of energy (LCoE), not raw capacity. So the
-whole solution is built to find the lowest credible cost at adequate capacity rather
-than the largest system. The recommended design is a staged single-doublet scheme
-(one geothermal doublet, a central heat pump, seasonal HT-ATES storage, and
-heat-driven cooling) that meets the demand at about 20.9 EUR/GJ. Doing cooling as well
-as heating pushes geothermal utilisation from 59% to 99%, which is the main reason the
-cost comes out low.
+**Team QUANTIVE:**
+
+| Member | SPE member number |
+|--------|-------------------|
+| Aaron Ontoyin Yin | 5585251 |
+| Kojo Ohene Obeng | 5899103 |
+| Ebenezer Tutu Ainoo | 5901046 |
+| Shahima Mubarik | 5677072 |
+| Joel Mensah | 5001276 |
+
+## Problem statement
+
+Assess the Rotliegend (Slochteren) geothermal resource near Utrecht in the Netherlands
+and design a district energy system that delivers at least 10 MWth of heating and at
+least 5 MWth of cooling. The judging metric is the levelized cost of energy (LCoE) at
+adequate capacity, not raw capacity, and drilling cost is counted for every well.
+
+## Solution summary
+
+The whole solution is built to find the lowest credible cost at adequate capacity
+rather than the largest system. The recommended design is a staged single-doublet
+scheme (one geothermal doublet, a central heat pump, seasonal HT-ATES storage, and
+heat-driven cooling) that meets the demand at an all-in **21.1 EUR/GJ** (P10 16.7,
+P50 21.1, P90 36.8). Doing cooling as well as heating pushes geothermal utilisation
+from 59% to 99%, which is the main reason the cost comes out low.
+
+The codebase does three things:
+
+1. Runs the full analysis pipeline (data cleaning, resource assessment, system design,
+   techno-economics) from one typed configuration.
+2. Exposes that pipeline as a command-line tool and as a FastAPI backend.
+3. Ships a React demo app that drives the backend so you can evaluate a design or
+   search for the least-cost one interactively.
+
+A full write-up is in `docs/TECHNICAL_REPORT.md`; the methodology at a glance is below.
 
 The codebase does three things:
 

@@ -1,9 +1,9 @@
-# GEOTHERM: Slide Script (for review)
+# QUANTIVE: Slide Script (for review)
 
 Plain text first. Once the wording is settled, this becomes the PowerPoint.
 Style: short lines, plain words, no em dashes, large bullets, help text small and rare.
 
-Fill before submission: team member names and SPE numbers (slide 1), GitHub link (slide 14).
+Fill before submission: confirm the GitHub link (slide 14).
 
 ---
 
@@ -13,7 +13,9 @@ Fill before submission: team member names and SPE numbers (slide 1), GitHub link
 
 A least-cost design delivering at least 10 MWth of heat and 5 MWth of cooling from the Rotliegend.
 
-Team GEOTHERM. [member names + SPE numbers]. SPE Africa Geothermal Datathon 2026.
+Team QUANTIVE. SPE Africa Geothermal Datathon 2026.
+
+Aaron Ontoyin Yin (5585251), Kojo Ohene Obeng (5899103), Ebenezer Tutu Ainoo (5901046), Shahima Mubarik (5677072), Joel Mensah (5001276).
 
 **Visual:** dark cover, warm accent bar, thin layered bands at the bottom (a nod to rock layers). No image needed.
 
@@ -204,9 +206,9 @@ Five small cards:
 - Cooling integration is what makes it economic.
 - About 21 EUR/GJ. Test before scaling.
 
-Code, app and report: [GitHub link]
+Code, app and report: github.com/Aaron-Ontoyin/geodatathon-spe-june26
 
-Team GEOTHERM.
+Team QUANTIVE.
 
 **Visual:** dark closing slide, matching the cover. No image needed.
 

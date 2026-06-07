@@ -53,7 +53,7 @@ GREY = "#8a9494"
 DPI = 150
 
 FIG_DIR = config.OUTPUTS_DIR / "figures"
-HTML_PATH = config.OUTPUTS_DIR / "Team_GEOTHERM_PPT_V1.html"
+HTML_PATH = config.OUTPUTS_DIR / "Team_QUANTIVE_PPT_V1.html"
 
 
 def _apply_style() -> None:
@@ -672,11 +672,11 @@ def _title_slide_html(nums: DeckNumbers) -> str:
         '<section class="slide title">'
         "<h1>Geothermal District Heating &amp; Cooling for Utrecht: "
         "the lowest-cost path to &gt;=10 MWth heat + &gt;=5 MWth cooling</h1>"
-        '<p class="team">Team [TEAM NAME]</p>'
-        '<p class="members">[MEMBER NAMES + SPE MEMBER NUMBERS]</p>'
+        '<p class="team">Team QUANTIVE</p>'
+        '<p class="members">Aaron Ontoyin Yin (5585251), Kojo Ohene Obeng (5899103), '
+        "Ebenezer Tutu Ainoo (5901046), Shahima Mubarik (5677072), "
+        "Joel Mensah (5001276)</p>"
         '<p class="event">SPE Africa Geothermal Datathon 2026</p>'
-        '<p class="thesis">"Not the most megawatts, the lowest, most credible '
-        'LCoE."</p>'
         "</section>"
     )
 
@@ -714,7 +714,7 @@ def build_html_deck(nums: DeckNumbers, figs: dict[str, Path]) -> Path:
         "<!DOCTYPE html>"
         '<html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        "<title>Team GEOTHERM, Geothermal Datathon Deck</title>"
+        "<title>Team QUANTIVE, Geothermal Datathon Deck</title>"
         f"<style>{_HTML_CSS}</style></head>"
         f'<body><div class="deck">{body}</div></body></html>'
     )
