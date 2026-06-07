@@ -129,7 +129,9 @@ def fig_monthly_dispatch(best: DesignCandidate) -> Path:
         colors=[TEAL, SIENNA_LIGHT, GREY],
         alpha=0.9,
     )
-    ax_h.plot(months, m["heating_mw"], color=SLATE, lw=2.4, marker="o", ms=4, label="Heating demand")
+    ax_h.plot(
+        months, m["heating_mw"], color=SLATE, lw=2.4, marker="o", ms=4, label="Heating demand"
+    )
     ax_h.set_title("Heating: winter supply stack vs demand")
     ax_h.set_ylabel("Thermal power (MWth)")
     ax_h.set_xlabel("Month")
@@ -148,7 +150,9 @@ def fig_monthly_dispatch(best: DesignCandidate) -> Path:
         colors=[TEAL, SAND, SIENNA],
         alpha=0.9,
     )
-    ax_c.plot(months, m["cooling_mw"], color=SLATE, lw=2.4, marker="o", ms=4, label="Cooling demand")
+    ax_c.plot(
+        months, m["cooling_mw"], color=SLATE, lw=2.4, marker="o", ms=4, label="Cooling demand"
+    )
     ax_c.set_title("Cooling: summer supply stack vs demand")
     ax_c.set_ylabel("Thermal power (MWth)")
     ax_c.set_xlabel("Month")
