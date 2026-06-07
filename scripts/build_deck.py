@@ -1,9 +1,9 @@
-"""Build the D2 deliverable: figures + a 13-slide PowerPoint from the live model.
+"""Build the D2 deliverable: figures + a self-contained HTML deck from the live model.
 
 Run with:
 
     GEO_THERMOGIS_ROOT=data/thermogis_grid \
-        uv run --with python-pptx --with matplotlib python scripts/build_deck.py
+        uv run --with matplotlib python scripts/build_deck.py
 
 Every number and figure is computed from the current model (nothing hardcoded), so the
 deck always matches the latest results. Outputs land in ``outputs/`` (gitignored).
@@ -23,9 +23,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
-from pptx import Presentation
-from pptx.dml.color import RGBColor
-from pptx.util import Inches, Pt
 
 from geothermal import config
 from geothermal.design import district_demand, simulate
@@ -53,17 +50,9 @@ SAND = "#e7ddc9"
 HIGHLIGHT = "#c4762a"
 GREY = "#8a9494"
 
-TEAL_RGB = RGBColor(0x0F, 0x6E, 0x6E)
-TEAL_DARK_RGB = RGBColor(0x0A, 0x4A, 0x4A)
-SIENNA_RGB = RGBColor(0xA8, 0x53, 0x1F)
-SLATE_RGB = RGBColor(0x2E, 0x3A, 0x3A)
-WHITE_RGB = RGBColor(0xFF, 0xFF, 0xFF)
-SAND_RGB = RGBColor(0xF3, 0xEE, 0xE3)
-
 DPI = 150
 
 FIG_DIR = config.OUTPUTS_DIR / "figures"
-PPTX_PATH = config.OUTPUTS_DIR / "Team_GEOTHERM_PPT_V1.pptx"
 HTML_PATH = config.OUTPUTS_DIR / "Team_GEOTHERM_PPT_V1.html"
 
 
@@ -345,94 +334,6 @@ class SlideSpec:
     image: Path | None = None
 
 
-def _add_title_slide(prs: Presentation) -> None:
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
-    _fill_background(slide, prs, TEAL_DARK_RGB)
-
-    title = _add_textbox(slide, Inches(0.7), Inches(1.6), Inches(12), Inches(2.0))
-    p = title.paragraphs[0]
-    run = p.add_run()
-    run.text = (
-        "Geothermal District Heating & Cooling for Utrecht: "
-        "the lowest-cost path to >=10 MWth heat + >=5 MWth cooling"
-    )
-    run.font.size = Pt(32)
-    run.font.bold = True
-    run.font.color.rgb = WHITE_RGB
-
-    sub = _add_textbox(slide, Inches(0.7), Inches(3.8), Inches(12), Inches(2.6))
-    lines = [
-        ("Team [TEAM NAME]", 22, True, SAND_RGB),
-        ("[MEMBER NAMES + SPE MEMBER NUMBERS]", 18, False, WHITE_RGB),
-        ("SPE Africa Geothermal Datathon 2026", 16, False, SAND_RGB),
-        ('"Not the most megawatts, the lowest, most credible LCoE."', 18, True, SIENNA_RGB),
-    ]
-    for i, (text, size, bold, color) in enumerate(lines):
-        para = sub.paragraphs[0] if i == 0 else sub.add_paragraph()
-        run = para.add_run()
-        run.text = text
-        run.font.size = Pt(size)
-        run.font.bold = bold
-        run.font.color.rgb = color
-        para.space_after = Pt(10)
-
-
-def _add_content_slide(prs: Presentation, spec: SlideSpec) -> None:
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
-
-    # Title bar.
-    bar = slide.shapes.add_shape(1, Inches(0), Inches(0), prs.slide_width, Inches(1.0))
-    bar.fill.solid()
-    bar.fill.fore_color.rgb = TEAL_RGB
-    bar.line.fill.background()
-    bar.shadow.inherit = False
-    tf = bar.text_frame
-    tf.margin_left = Inches(0.5)
-    tf.word_wrap = True
-    p = tf.paragraphs[0]
-    run = p.add_run()
-    run.text = spec.title
-    run.font.size = Pt(24)
-    run.font.bold = True
-    run.font.color.rgb = WHITE_RGB
-
-    has_image = spec.image is not None
-    body_w = Inches(6.0) if has_image else Inches(11.8)
-    body = _add_textbox(slide, Inches(0.6), Inches(1.3), body_w, Inches(5.8))
-    for i, bullet in enumerate(spec.bullets):
-        para = body.paragraphs[0] if i == 0 else body.add_paragraph()
-        run = para.add_run()
-        run.text = bullet
-        run.font.size = Pt(16)
-        run.font.color.rgb = SLATE_RGB
-        para.space_after = Pt(10)
-        para.line_spacing = 1.05
-
-    if has_image and spec.image is not None:
-        slide.shapes.add_picture(
-            str(spec.image), Inches(6.9), Inches(1.4), width=Inches(6.2)
-        )
-
-    notes = slide.notes_slide.notes_text_frame
-    notes.text = spec.notes
-
-
-def _add_textbox(slide: object, left: Inches, top: Inches, width: Inches, height: Inches) -> object:
-    box = slide.shapes.add_textbox(left, top, width, height)  # type: ignore[attr-defined]
-    box.text_frame.word_wrap = True
-    return box.text_frame
-
-
-def _fill_background(slide: object, prs: Presentation, color: RGBColor) -> None:
-    # Use the slide's own background fill (a standard OOXML construct) rather than a
-    # full-bleed rectangle reordered in the shape tree: the latter trips strict readers
-    # like Keynote. ``prs`` is unused now but kept for a stable call signature.
-    del prs
-    background = slide.background  # type: ignore[attr-defined]
-    background.fill.solid()
-    background.fill.fore_color.rgb = color
-
-
 def _slide_specs(
     nums: DeckNumbers,
     figs: dict[str, Path],
@@ -609,17 +510,6 @@ def _slide_specs(
 
 def _n_words(n: int) -> str:
     return {1: "One", 2: "Two", 3: "Three"}.get(n, str(n))
-
-
-def build_deck(nums: DeckNumbers, figs: dict[str, Path]) -> Path:
-    prs = Presentation()
-    prs.slide_width = Inches(13.333)
-    prs.slide_height = Inches(7.5)
-    _add_title_slide(prs)
-    for spec in _slide_specs(nums, figs):
-        _add_content_slide(prs, spec)
-    prs.save(PPTX_PATH)
-    return PPTX_PATH
 
 
 # --------------------------------------------------------------------------- #
@@ -861,11 +751,10 @@ def main() -> None:
         p90=p90,
         lcoe_by_doublets=lcoe_by_doublets,
     )
-    pptx_path = build_deck(nums, figs)
     html_path = build_html_deck(nums, figs)
 
     print("Generated files:")
-    for path in (*figs.values(), pptx_path, html_path):
+    for path in (*figs.values(), html_path):
         size_kb = path.stat().st_size / 1024
         print(f"  {path}  ({size_kb:.1f} KB)")
     print()
