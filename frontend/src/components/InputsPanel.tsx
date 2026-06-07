@@ -140,7 +140,9 @@ export function InputsPanel({
     if (!config) return FIELD_GROUPS;
     const known = new Set(FIELD_GROUPS.flatMap((g) => g.fields.map((f) => f.name)));
     const extra: FieldDef[] = config.fields
-      .filter((f) => !known.has(f.name))
+      // Only scalar numeric fields can be rendered as numeric inputs. Non-numeric config
+      // (e.g. aoi_center_rd, a coordinate tuple) is not a panel field and would crash.
+      .filter((f) => !known.has(f.name) && typeof config.defaults[f.name] === "number")
       .map((f) => ({
         name: f.name,
         label: prettify(f.name),

@@ -39,21 +39,21 @@ const asNumberPair = (v: unknown): [number, number] | undefined =>
 
 export function App() {
   const [config, setConfig] = useState<ConfigResponse | null>(null);
-  const [values, setValues] = usePersistentState<Assumptions>("geotherm.values", {});
-  const [mode, setMode] = usePersistentState<"single" | "optimize">("geotherm.mode", "single");
-  const [search, setSearch] = usePersistentState<SearchState>("geotherm.search", INITIAL_SEARCH);
-  const [dashboard, setDashboard] = usePersistentState<Dashboard | null>("geotherm.dashboard", null);
-  const [reportMd, setReportMd] = usePersistentState<string | null>("geotherm.report", null);
+  const [values, setValues] = usePersistentState<Assumptions>("geotherm.v2.values", {});
+  const [mode, setMode] = usePersistentState<"single" | "optimize">("geotherm.v2.mode", "single");
+  const [search, setSearch] = usePersistentState<SearchState>("geotherm.v2.search", INITIAL_SEARCH);
+  const [dashboard, setDashboard] = usePersistentState<Dashboard | null>("geotherm.v2.dashboard", null);
+  const [reportMd, setReportMd] = usePersistentState<string | null>("geotherm.v2.report", null);
   const [reportLoading, setReportLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ProgressEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showKeys, setShowKeys] = useState(false);
   const [resultObjective, setResultObjective] = usePersistentState<Objective | null>(
-    "geotherm.result-objective",
+    "geotherm.v2.result-objective",
     null,
   );
-  const rail = useResizable({ storageKey: "geotherm.rail-width", initial: 420, min: 300, max: 640 });
+  const rail = useResizable({ storageKey: "geotherm.v2.rail-width", initial: 420, min: 300, max: 640 });
 
   useEffect(() => {
     getConfig()
