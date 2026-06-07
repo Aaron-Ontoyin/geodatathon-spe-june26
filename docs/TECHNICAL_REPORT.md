@@ -78,14 +78,13 @@ We use one external dataset beyond the provided files, documented here as the br
   Pump scenarios, six properties each (about 3 MB of the roughly 195 MB national export), so the
   repository is self-contained without shipping unused data. The path is configurable via
   `GEO_THERMOGIS_ROOT`.
-- **How it influenced the design.** The grid is used in two supporting roles, not to drive the
-  headline. First, as an **independent out-of-sample check** on the well-log work: the
-  porosity imputed from the logs is compared against ThermoGIS, which is built without these
-  logs (Section 5.1). Second, as the resource source for the **independent grid-based siting
-  confirmation** (Section 4.6), which searches every viable cell in the area of interest and
-  independently arrives at a single doublet, corroborating the recommendation. The **canonical
-  result rests on the provided data** (the four wells and LCOE.xlsx); the external grid
-  strengthens confidence in it rather than producing it.
+- **How it influenced the design.** The grid serves one supporting role: it is the resource
+  source for the **independent grid-based siting confirmation** (Section 4.6), an unbiased
+  search over every viable cell in the area of interest that independently arrives at a single
+  doublet, corroborating the recommendation. The **canonical result rests on the provided
+  data** (the four wells and LCOE.xlsx); the external grid is a second, independent check that
+  agrees, not the source of the answer. (The porosity validation in Section 5.1 uses the
+  provided per-well ThermoGIS sheets, which are part of the supplied data, not this grid.)
 
 ### 3.3 Data quirks handled
 
